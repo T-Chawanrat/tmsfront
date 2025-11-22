@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import AxiosInstance from "../../utils/AxiosInstance";
+// import AxiosInstance from "../../utils/AxiosInstance";
 import { ChevronDownIcon } from "lucide-react";
+import axios from "axios";
 
 export interface Warehouse {
   warehouse_id: number;
@@ -26,7 +27,7 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        const response = await AxiosInstance.get("/warehouses");
+        const response = await axios.get("https://xsendwork.com/api/warehouses");
         const data = response.data.data || [];
         setWarehouses(data);
         setFilteredWarehouses(data); // ตั้งค่าเริ่มต้นสำหรับ dropdown

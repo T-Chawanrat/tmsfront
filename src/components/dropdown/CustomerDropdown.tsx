@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import AxiosInstance from "../../utils/AxiosInstance";
+// import AxiosInstance from "../../utils/AxiosInstance";
 import { ChevronDownIcon } from "lucide-react";
+import axios from "axios";
 
 export interface Customer {
   customer_id: number;
@@ -8,7 +9,7 @@ export interface Customer {
 }
 
 interface CustomerDropdownProps {
-  onChange: (customerId: number | null) => void; // Callback สำหรับส่งค่า customer_id ไปยัง parent
+  onChange: (customer: Customer | null) => void;
 }
 
 const CustomerDropdown: React.FC<CustomerDropdownProps> = ({ onChange }) => {
@@ -24,7 +25,7 @@ const CustomerDropdown: React.FC<CustomerDropdownProps> = ({ onChange }) => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await AxiosInstance.get("/customers");
+        const response = await axios.get("https://xsendwork.com/api/customers");
         const data = response.data.data || [];
         setCustomers(data);
         setFilteredCustomers(data); // ตั้งค่าเริ่มต้นสำหรับ dropdown
@@ -40,9 +41,7 @@ const CustomerDropdown: React.FC<CustomerDropdownProps> = ({ onChange }) => {
     // กรองข้อมูลตาม searchTerm
     if (searchTerm) {
       const results = customers.filter((customer) =>
-        customer.customer_name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+        customer.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredCustomers(results);
     } else {
@@ -76,78 +75,130 @@ const CustomerDropdown: React.FC<CustomerDropdownProps> = ({ onChange }) => {
   }, [searchTerm, selectedCustomerId, customers]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value; // ค่าที่พิมพ์ใน input
-    setSearchTerm(value); // อัปเดตคำค้นหา
-    setIsDropdownOpen(true); // เปิด dropdown เมื่อมีการพิมพ์
+    const value = e.target.value;
+    setSearchTerm(value);
+    setIsDropdownOpen(true);
 
-    // หากข้อความถูกลบจนเป็นค่าว่าง ให้รีเซ็ต selectedCustomerId และส่ง callback
     if (value === "") {
-      setSelectedCustomerId(null); // ไม่เลือกตัวเลือกใดๆ
-      onChange(null); // ส่งค่า null กลับไปยัง parent
+      setSelectedCustomerId(null);
+      onChange(null); // 👈 ส่ง null กลับไป
     }
   };
 
   const handleSelectChange = (customerId: number, customerName: string) => {
-    setSelectedCustomerId(customerId); // บันทึก customer_id ที่เลือก
-    setSearchTerm(customerName); // แสดงชื่อ customer ใน input
-    setIsDropdownOpen(false); // ปิด dropdown
-    onChange(customerId); // ส่งค่า customer_id กลับไปยัง parent component
+    setSelectedCustomerId(customerId);
+    setSearchTerm(customerName);
+    setIsDropdownOpen(false);
+
+    onChange({
+      customer_id: customerId,
+      customer_name: customerName,
+    }); // 👈 ส่งทั้ง object กลับไป
   };
 
-  const toggleDropdown = () => {
-    // toggle dropdown และรีเซ็ต searchTerm (เพื่อเปิด dropdown ให้แสดงรายการทั้งหมด)
-    setIsDropdownOpen((prev) => !prev);
-    if (!isDropdownOpen) {
-      setSearchTerm(""); // รีเซ็ต searchTerm เมื่อกดลูกศร
-    }
-  };
+  // const toggleDropdown = () => {
+  //   // toggle dropdown และรีเซ็ต searchTerm (เพื่อเปิด dropdown ให้แสดงรายการทั้งหมด)
+  //   setIsDropdownOpen((prev) => !prev);
+  //   if (!isDropdownOpen) {
+  //     setSearchTerm(""); // รีเซ็ต searchTerm เมื่อกดลูกศร
+  //   }
+  // };
 
   return (
-    <div className="relative max-w-xs" ref={dropdownRef}>
-      <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1 h-9">
-        <input
-          type="text"
-          placeholder="ค้นหาเจ้าของงาน"
-          value={searchTerm}
-          onChange={handleInputChange}
-          onFocus={() => setIsDropdownOpen(true)} // เปิด dropdown เมื่อ focus
-          className="flex-grow focus:outline-none"
-        />
-        <button
-          type="button"
-          onClick={toggleDropdown} // เปิด dropdown เมื่อคลิกลูกศร
-          className="ml-2 focus:outline-none"
-        >
-          <ChevronDownIcon className="h-5 text-gray-500 -ml-5" />
-        </button>
-      </div>
-      {isDropdownOpen && (
-        <ul className="absolute z-10 bg-white border border-gray-300 rounded-lg mt-1 max-h-40 overflow-y-auto w-95">
-          {filteredCustomers.length > 0 ? (
-            filteredCustomers.map((customer) => (
-              <li
-                key={customer.customer_id}
-                className={`px-3 py-2 cursor-pointer hover:bg-gray-200 ${
-                  customer.customer_id === selectedCustomerId
-                    ? "bg-gray-100"
-                    : ""
-                }`}
-                onClick={() =>
-                  handleSelectChange(
-                    customer.customer_id,
-                    customer.customer_name
-                  )
-                }
-              >
-                {customer.customer_name}
-              </li>
-            ))
-          ) : (
-            <li className="px-3 py-2 text-gray-500">ไม่พบข้อมูล</li>
-          )}
-        </ul>
+    // <div className="relative max-w-xs" ref={dropdownRef}>
+    //   <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1 h-9">
+    //     <input
+    //       type="text"
+    //       placeholder="ค้นหาเจ้าของงาน"
+    //       value={searchTerm}
+    //       onChange={handleInputChange}
+    //       onFocus={() => setIsDropdownOpen(true)} // เปิด dropdown เมื่อ focus
+    //       className="flex-grow focus:outline-none"
+    //     />
+    //     <button
+    //       type="button"
+    //       onClick={toggleDropdown} // เปิด dropdown เมื่อคลิกลูกศร
+    //       className="ml-2 focus:outline-none"
+    //     >
+    //       <ChevronDownIcon className="h-5 text-gray-500 -ml-5" />
+    //     </button>
+    //   </div>
+    //   {isDropdownOpen && (
+    //     <ul className="absolute z-10 bg-white border border-gray-300 rounded-lg mt-1 max-h-40 overflow-y-auto w-95">
+    //       {filteredCustomers.length > 0 ? (
+    //         filteredCustomers.map((customer) => (
+    //           <li
+    //             key={customer.customer_id}
+    //             className={`px-3 py-2 cursor-pointer hover:bg-gray-200 ${
+    //               customer.customer_id === selectedCustomerId
+    //                 ? "bg-gray-100"
+    //                 : ""
+    //             }`}
+    //             onClick={() =>
+    //               handleSelectChange(
+    //                 customer.customer_id,
+    //                 customer.customer_name
+    //               )
+    //             }
+    //           >
+    //             {customer.customer_name}
+    //           </li>
+    //         ))
+    //       ) : (
+    //         <li className="px-3 py-2 text-gray-500">ไม่พบข้อมูล</li>
+    //       )}
+    //     </ul>
+    //   )}
+    // </div>
+    <div className="relative w-full" ref={dropdownRef}>
+  {/* <label className="block text-sm font-medium mb-1">
+    ชื่อลูกค้า (CUSTOMER_NAME)
+  </label> */}
+
+  <div
+    className="flex items-center w-full border rounded px-2 py-1 text-sm cursor-text bg-white"
+    onClick={() => setIsDropdownOpen(true)}
+  >
+    <input
+      type="text"
+      placeholder="ค้นหาลูกค้า"
+      value={searchTerm}
+      onChange={handleInputChange}
+      onFocus={() => setIsDropdownOpen(true)}
+      className="flex-grow focus:outline-none text-sm bg-transparent"
+    />
+    <ChevronDownIcon className="h-4 text-gray-500 ml-1" />
+  </div>
+
+  {isDropdownOpen && (
+    <ul
+      className="absolute z-10 bg-white border border-gray-300 rounded mt-1 w-full 
+                 max-h-40 overflow-y-auto shadow-sm"
+    >
+      {filteredCustomers.length > 0 ? (
+        filteredCustomers.map((customer) => (
+          <li
+            key={customer.customer_id}
+            className={`px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 ${
+              customer.customer_id === selectedCustomerId ? "bg-gray-100" : ""
+            }`}
+            onClick={() =>
+              handleSelectChange(
+                customer.customer_id,
+                customer.customer_name
+              )
+            }
+          >
+            {customer.customer_name}
+          </li>
+        ))
+      ) : (
+        <li className="px-3 py-2 text-gray-500 text-sm">ไม่พบข้อมูล</li>
       )}
-    </div>
+    </ul>
+  )}
+</div>
+
   );
 };
 

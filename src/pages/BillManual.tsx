@@ -4,6 +4,7 @@ import ResizableColumns from "../components/ResizableColumns";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import { useAuth } from "../context/AuthContext";
+import CustomerDropdown from "../components/dropdown/CustomerDropdown"; // ปรับ path ตามโครงโปรเจกต์จริง
 
 type ImportRow = {
   NO_BILL: string;
@@ -232,13 +233,13 @@ export default function BillManual() {
             <label className="block text-sm font-medium mb-1">
               ชื่อลูกค้า (CUSTOMER_NAME)
             </label>
-            <input
-              type="text"
-              value={formRow.CUSTOMER_NAME}
-              onChange={(e) =>
-                handleChangeField("CUSTOMER_NAME", e.target.value)
-              }
-              className="w-full border rounded px-2 py-1 text-sm"
+            <CustomerDropdown
+              onChange={(customer) => {
+                handleChangeField(
+                  "CUSTOMER_NAME",
+                  customer?.customer_name || ""
+                );
+              }}
             />
           </div>
 
