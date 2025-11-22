@@ -22,6 +22,20 @@ type ImportRow = {
   SERIAL_NO: string;
 };
 
+type ZipAddressRow = {
+  id: number;
+  tambon_id: number;
+  tambon_name_th: string;
+  ampur_id: number;
+  ampur_name_th: string;
+  province_id: number;
+  province_name_th: string;
+  zip_code: string;
+  warehouse_id: number;
+  warehouse_code: string;
+  warehouse_name: string;
+};
+
 const headers = [
   "ลำดับ",
   "จัดการ",
@@ -79,6 +93,8 @@ export default function BillManual() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [zipOptions, setZipOptions] = useState<ZipAddressRow[]>([]);
+  const [loadingZip, setLoadingZip] = useState(false);
   const { user } = useAuth();
 
   const handleChangeField = (field: keyof ImportRow, value: string) => {
@@ -143,6 +159,56 @@ export default function BillManual() {
     setEditingIndex(null); // ให้เป็นโหมด "เพิ่มใหม่" ไม่ใช่แก้แถวเดิม
     setError(null);
     setSuccess(null);
+  };
+
+  const handleZipBlur = async () => {
+    const zip = formRow.RECIPIENT_ZIPCODE.trim();
+
+    // ถ้าไม่กรอก หรือไม่ใช่ 5 หลัก ไม่ต้องเรียก API
+    if (!zip || zip.length !== 5) return;
+
+    try {
+      setLoadingZip(true);
+
+      const res = await axios.get("https://xsendwork.com/api/warehouses", {
+        params: { zip_code: zip }, // 👈 ใช้ตัวแปร zip เลย
+      });
+
+      const data: ZipAddressRow[] = res.data.data || [];
+
+      if (!data.length) {
+        // ไม่เจอ zip ในระบบ → เคลียร์ options และไม่ auto fill
+        setZipOptions([]);
+        // จะล้าง province/district/subdistrict ทิ้งด้วยก็ได้ ถ้าอยากให้เคลียร์ฟอร์ม
+        // handleChangeField("RECIPIENT_PROVINCE", "");
+        // handleChangeField("RECIPIENT_DISTRICT", "");
+        // handleChangeField("RECIPIENT_SUBDISTRICT", "");
+        return;
+      }
+
+      // ใช้แถวแรกเป็นตัวตั้ง (จังหวัด / อำเภอ / warehouse เหมือนกันทั้ง zip)
+      const first = data[0];
+
+      // auto fill จังหวัด + อำเภอ
+      handleChangeField("RECIPIENT_PROVINCE", first.province_name_th);
+      handleChangeField("RECIPIENT_DISTRICT", first.ampur_name_th);
+
+      // เก็บตัวเลือกตำบลทั้งหมดไว้
+      setZipOptions(data);
+
+      if (data.length === 1) {
+        // ถ้ามีตำบลเดียว → ใส่ให้อัตโนมัติ
+        handleChangeField("RECIPIENT_SUBDISTRICT", first.tambon_name_th);
+      } else {
+        // ถ้ามีหลายตำบล → บังคับให้ user เลือกเองใน dropdown
+        handleChangeField("RECIPIENT_SUBDISTRICT", "");
+      }
+    } catch (err) {
+      console.error("Error fetching zip address:", err);
+      setZipOptions([]);
+    } finally {
+      setLoadingZip(false);
+    }
   };
 
   const handleSave = async () => {
@@ -303,14 +369,32 @@ export default function BillManual() {
             <label className="block text-sm font-medium mb-1">
               ตำบล (RECIPIENT_SUBDISTRICT)
             </label>
-            <input
-              type="text"
-              value={formRow.RECIPIENT_SUBDISTRICT}
-              onChange={(e) =>
-                handleChangeField("RECIPIENT_SUBDISTRICT", e.target.value)
-              }
-              className="w-full border rounded px-2 py-1 text-sm"
-            />
+
+            {zipOptions.length > 0 ? (
+              <select
+                value={formRow.RECIPIENT_SUBDISTRICT}
+                onChange={(e) =>
+                  handleChangeField("RECIPIENT_SUBDISTRICT", e.target.value)
+                }
+                className="w-full border rounded px-2 py-1 text-sm bg-white"
+              >
+                <option value="">-- เลือกตำบล --</option>
+                {zipOptions.map((row) => (
+                  <option key={row.tambon_id} value={row.tambon_name_th}>
+                    {row.tambon_name_th}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={formRow.RECIPIENT_SUBDISTRICT}
+                onChange={(e) =>
+                  handleChangeField("RECIPIENT_SUBDISTRICT", e.target.value)
+                }
+                className="w-full border rounded px-2 py-1 text-sm"
+              />
+            )}
           </div>
 
           <div>
@@ -351,8 +435,14 @@ export default function BillManual() {
               onChange={(e) =>
                 handleChangeField("RECIPIENT_ZIPCODE", e.target.value)
               }
+              onBlur={handleZipBlur} // 👈 เรียก API ตอนออกจากช่อง
               className="w-full border rounded px-2 py-1 text-sm"
             />
+            {loadingZip && (
+              <p className="text-xs text-gray-500 mt-1">
+                กำลังตรวจสอบรหัสไปรษณีย์...
+              </p>
+            )}
           </div>
 
           <div>
