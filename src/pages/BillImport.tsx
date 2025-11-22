@@ -121,7 +121,7 @@ export default function BillImport() {
       // สมมติ backend ทำ endpoint /import-bills (คุณไปเขียน controller รับ array นี้ได้เลย)
       const res = await axios.post("https://xsendwork.com/api/import-bills", {
         rows,
-        user_id: user?.user_id, // ✅ เพิ่ม user_id
+        user_id: user?.user_id,
         type: "IMPORT",
       });
 
