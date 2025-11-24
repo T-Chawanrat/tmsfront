@@ -290,7 +290,7 @@ export default function BillImport() {
                     className={
                       "px-3 py-1 border-b text-sm truncate " +
                       (duplicates[row.SERIAL_NO] > 1
-                        ? "text-red-600 font-bold"
+                        ? "text-red-500 font-bold"
                         : "")
                     }
                   >

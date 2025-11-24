@@ -499,6 +499,16 @@ const navItems: NavItem[] = [
         path: "/bills",
         icon: <File size={20} />,
       },
+      {
+        name: "ยิงเทียบพัสดุ",
+        path: "/warehouse-scan",
+        icon: <File size={20} />,
+      },
+      {
+        name: "ยิงลงจากรถ",
+        path: "/dc-scan",
+        icon: <File size={20} />,
+      },
 
     ],
   },

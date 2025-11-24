@@ -36,6 +36,8 @@ import Bills from "./pages/Bills";
 // import LayoutNoImage from "./pages/NoImage/LayoutNoImage";
 import BillImport from "./pages/BillImport";
 import BillManual from "./pages/BillManual";
+import BillScanWarehouse from "./pages/BillScanWarehouse";
+import BillScanDc from "./pages/BillScanDc";
 
 export default function App() {
   return (
@@ -140,6 +142,8 @@ export default function App() {
               <Route path="/bills" element={<Bills />} />
               <Route path="/import" element={<BillImport />} />
               <Route path="/input" element={<BillManual />} />
+              <Route path="/warehouse-scan" element={<BillScanWarehouse />} />
+              <Route path="/dc-scan" element={<BillScanDc />} />
 
               {/* Forms */}
               {/* <Route path="/form-elements" element={<FormElements />} /> */}

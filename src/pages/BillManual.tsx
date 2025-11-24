@@ -97,6 +97,7 @@ export default function BillManual() {
   const [addressOptions, setAddressOptions] = useState<ZipAddressRow[]>([]);
   const [loadingAddress, setLoadingAddress] = useState(false);
   const [activeField, setActiveField] = useState<keyof ImportRow | null>(null);
+  const [duplicates, setDuplicates] = useState<Record<string, number>>({});
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const { user } = useAuth();
 
@@ -206,6 +207,17 @@ export default function BillManual() {
     setSuccess(null);
   };
 
+  const findDuplicates = (rows: ImportRow[]) => {
+    const count: Record<string, number> = {};
+
+    rows.forEach((r) => {
+      if (!r.SERIAL_NO) return;
+      count[r.SERIAL_NO] = (count[r.SERIAL_NO] || 0) + 1;
+    });
+
+    return count;
+  };
+
   const handleSave = async () => {
     if (!rows.length) {
       setError("ยังไม่มีข้อมูลให้นำเข้าฐานข้อมูล");
@@ -249,6 +261,10 @@ export default function BillManual() {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    setDuplicates(findDuplicates(rows));
+  }, [rows]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -619,7 +635,14 @@ export default function BillManual() {
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.RECIPIENT_ZIPCODE || "-"}
                   </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
+                  <td
+                    className={
+                      "px-3 py-1 border-b text-sm truncate " +
+                      (row.SERIAL_NO && duplicates[row.SERIAL_NO] > 1
+                        ? "text-red-500 font-bold"
+                        : "")
+                    }
+                  >
                     {row.SERIAL_NO || "-"}
                   </td>
                 </tr>
