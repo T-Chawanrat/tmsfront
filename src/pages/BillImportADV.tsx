@@ -1,47 +1,35 @@
 import { useState, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
-// import AxiosInstance from "../utils/AxiosInstance";
-// import { useAuth } from "../context/AuthContext";
-// import { useNavigate } from "react-router-dom";
 import ResizableColumns from "../components/ResizableColumns";
-import { format } from "date-fns";
 import { useAuth } from "../context/AuthContext";
 
 type ImportRow = {
-  NO_BILL: string;
-  REFERENCE: string;
-  SEND_DATE: string; // เก็บเป็น string ตรง ๆ จาก excel
-  CUSTOMER_NAME: string;
-  RECIPIENT_CODE: string;
-  RECIPIENT_NAME: string;
-  RECIPIENT_TEL: string;
-  RECIPIENT_ADDRESS: string;
-  RECIPIENT_SUBDISTRICT: string;
-  RECIPIENT_DISTRICT: string;
-  RECIPIENT_PROVINCE: string;
-  RECIPIENT_ZIPCODE: string;
-  SERIAL_NO: string;
+  dpe_bill_no: string;
+  cusname: string;
+  address: string;
+  province_name: string;
+  amphur_name: string;
+  district_name: string;
+  box_sn: string;
+  postcode: string;
+  cusmobile: string;
 };
 
 const headers = [
-  "ลำดับ",
-  "NO_BILL",
-  "REFERENCE",
-  "SEND_DATE",
-  "CUSTOMER_NAME",
-  "RECIPIENT_CODE",
-  "RECIPIENT_NAME",
-  "RECIPIENT_TEL",
-  "RECIPIENT_ADDRESS",
-  "RECIPIENT_SUBDISTRICT",
-  "RECIPIENT_DISTRICT",
-  "RECIPIENT_PROVINCE",
-  "RECIPIENT_ZIPCODE",
-  "SERIAL_NO",
+  "ลําดับ",
+  "dpe_bill_no",
+  "cusname",
+  "address",
+  "province_name",
+  "amphur_name",
+  "district_name",
+  "box_sn",
+  "postcode",
+  "cusmobile",
 ];
 
-export default function BillImport() {
+export default function BillImportADV() {
   const [fileName, setFileName] = useState<string>("");
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,15 +38,6 @@ export default function BillImport() {
   const [success, setSuccess] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<Record<string, number>>({});
   const { user } = useAuth();
-
-  // const { isLoggedIn } = useAuth();
-  // const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   if (!isLoggedIn) {
-  //     navigate("/signin", { replace: true });
-  //   }
-  // }, [isLoggedIn, navigate]);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +63,7 @@ export default function BillImport() {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
-        // แปลง Sheet → JSON ตาม header ใน Excel
+        // แปลง Sheet → JSON ตาม header ใน Excel (ต้องให้ header แถวแรกตรงกับชื่อ key ด้านบน)
         const json: ImportRow[] = XLSX.utils.sheet_to_json(worksheet, {
           defval: "",
         }) as ImportRow[];
@@ -118,9 +97,24 @@ export default function BillImport() {
     setSuccess(null);
 
     try {
-      // สมมติ backend ทำ endpoint /import-bills (คุณไปเขียน controller รับ array นี้ได้เลย)
-      const res = await axios.post("https://xsendwork.com/api/import-bills", {
-        rows,
+      const payloadRows = rows.map((r) => ({
+        NO_BILL: null,
+        REFERENCE: r.dpe_bill_no || null,
+        SEND_DATE: null,
+        CUSTOMER_NAME: r.cusname || null,
+        RECIPIENT_CODE: null,
+        RECIPIENT_NAME: null,
+        RECIPIENT_TEL: r.cusmobile || null,
+        RECIPIENT_ADDRESS: r.address || null,
+        RECIPIENT_SUBDISTRICT: r.district_name || null,
+        RECIPIENT_DISTRICT: r.amphur_name || null,
+        RECIPIENT_PROVINCE: r.province_name || null,
+        RECIPIENT_ZIPCODE: r.postcode || null,
+        SERIAL_NO: r.box_sn || null,
+      }));
+
+      const res = await axios.post("https://xsendwork.com/api/import-adv", {
+        rows: payloadRows,
         user_id: user?.user_id,
         type: "IMPORT",
       });
@@ -152,16 +146,11 @@ export default function BillImport() {
     const count: Record<string, number> = {};
 
     rows.forEach((r) => {
-      if (!r.SERIAL_NO) return;
-      count[r.SERIAL_NO] = (count[r.SERIAL_NO] || 0) + 1;
+      if (!r.box_sn) return;
+      count[r.box_sn] = (count[r.box_sn] || 0) + 1;
     });
 
-    return count; // key = serial, value = count
-  };
-
-  const excelDateToJSDate = (serial: number): Date | null => {
-    if (!serial || isNaN(serial)) return null;
-    return new Date((serial - 25569) * 86400 * 1000);
+    return count;
   };
 
   return (
@@ -170,7 +159,7 @@ export default function BillImport() {
         loading || saving ? "cursor-wait" : ""
       }`}
     >
-      <h2 className="text-xl font-bold mb-4">นำเข้า Excel (Bills)</h2>
+      <h2 className="text-xl font-bold mb-4">นำเข้า Excel (Bills ADV)</h2>
 
       {/* ส่วนอัปโหลดไฟล์ */}
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
@@ -222,8 +211,6 @@ export default function BillImport() {
       )}
 
       {/* Preview Table */}
-      {/* <div className="overflow-x-auto w-full border border-gray-300 rounded"> */}
-
       <div className="overflow-x-auto overflow-y-auto max-h-[80vh] w-full border border-gray-300 rounded">
         {!rows.length && !loading && (
           <div className="p-4 text-center text-gray-500">
@@ -233,7 +220,7 @@ export default function BillImport() {
 
         {rows.length > 0 && (
           <table className="w-full table-fixed border-collapse">
-            <ResizableColumns headers={headers} pageKey="bill-import" />
+            <ResizableColumns headers={headers} pageKey="import-adv" />
             <thead className="bg-gray-100"></thead>
             <tbody>
               {rows.map((row, idx) => (
@@ -241,60 +228,44 @@ export default function BillImport() {
                   key={idx}
                   className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                 >
+                  {/* ลำดับ */}
                   <td className="px-3 py-1 border-b text-sm bg-gray-100 font-semibold text-center sticky left-0 z-10">
                     {idx + 1}
                   </td>
 
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.NO_BILL || "-"}
+                    {row.dpe_bill_no || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.REFERENCE || "-"}
+                    {row.cusname || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.SEND_DATE && excelDateToJSDate(Number(row.SEND_DATE))
-                      ? format(
-                          excelDateToJSDate(Number(row.SEND_DATE))!,
-                          "dd/MM/yyyy"
-                        )
-                      : "-"}
+                    {row.address || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.CUSTOMER_NAME || "-"}
+                    {row.province_name || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_CODE || "-"}
+                    {row.amphur_name || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_NAME || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_TEL || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_ADDRESS || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_SUBDISTRICT || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_DISTRICT || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_PROVINCE || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_ZIPCODE || "-"}
+                    {row.district_name || "-"}
                   </td>
                   <td
                     className={
                       "px-3 py-1 border-b text-sm truncate " +
-                      (duplicates[row.SERIAL_NO] > 1
+                      (duplicates[row.box_sn] > 1
                         ? "text-red-500 font-bold"
                         : "")
                     }
                   >
-                    {row.SERIAL_NO || "-"}
+                    {row.box_sn || "-"}
+                  </td>
+                  <td className="px-3 py-1 border-b text-sm truncate">
+                    {row.postcode || "-"}
+                  </td>
+                  <td className="px-3 py-1 border-b text-sm truncate">
+                    {row.cusmobile || "-"}
                   </td>
                 </tr>
               ))}

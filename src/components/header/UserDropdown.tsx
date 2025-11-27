@@ -64,7 +64,7 @@ export default function UserDropdown() {
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
             {user.first_name} {user.last_name}
           </span>
-          <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{user.dc_id}</span>
+          <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{user.dc_name}</span>
         </div>
 
         {/* <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">

@@ -5,43 +5,38 @@ import axios from "axios";
 // import { useAuth } from "../context/AuthContext";
 // import { useNavigate } from "react-router-dom";
 import ResizableColumns from "../components/ResizableColumns";
-import { format } from "date-fns";
 import { useAuth } from "../context/AuthContext";
 
 type ImportRow = {
-  NO_BILL: string;
+  NO_BILL: string | null;
+  SEND_DATE: string | null;
+  SERIAL_NO: string;
   REFERENCE: string;
-  SEND_DATE: string; // เก็บเป็น string ตรง ๆ จาก excel
   CUSTOMER_NAME: string;
   RECIPIENT_CODE: string;
   RECIPIENT_NAME: string;
-  RECIPIENT_TEL: string;
-  RECIPIENT_ADDRESS: string;
+  RECIPIENT_TEL: null;
+  RECIPIENT_ADDRESS: null;
   RECIPIENT_SUBDISTRICT: string;
   RECIPIENT_DISTRICT: string;
   RECIPIENT_PROVINCE: string;
-  RECIPIENT_ZIPCODE: string;
-  SERIAL_NO: string;
+  RECIPIENT_ZIPCODE: null;
+  TO_DC?: string;
 };
 
 const headers = [
   "ลำดับ",
-  "NO_BILL",
-  "REFERENCE",
-  "SEND_DATE",
-  "CUSTOMER_NAME",
-  "RECIPIENT_CODE",
-  "RECIPIENT_NAME",
-  "RECIPIENT_TEL",
-  "RECIPIENT_ADDRESS",
-  "RECIPIENT_SUBDISTRICT",
-  "RECIPIENT_DISTRICT",
-  "RECIPIENT_PROVINCE",
-  "RECIPIENT_ZIPCODE",
-  "SERIAL_NO",
+  "เลขที่บาร์โค้ด",
+  "เลขที่บิล",
+  "รหัสอ้างอิง",
+  "ผู้รับ",
+  "ตำบล",
+  "อำเภอ",
+  "จังหวัด",
+  "DCปลายทาง",
 ];
 
-export default function BillImport() {
+export default function BillImportVGT() {
   const [fileName, setFileName] = useState<string>("");
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,12 +80,36 @@ export default function BillImport() {
         const worksheet = workbook.Sheets[sheetName];
 
         // แปลง Sheet → JSON ตาม header ใน Excel
-        const json: ImportRow[] = XLSX.utils.sheet_to_json(worksheet, {
-          defval: "",
-        }) as ImportRow[];
+        const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(
+          worksheet,
+          {
+            defval: "",
+          }
+        );
 
-        setRows(json);
-        setDuplicates(findDuplicates(json));
+        // 2) map ไทย → ImportRow (key ภาษาอังกฤษที่เราใช้ในระบบ)
+        const mapped: ImportRow[] = rawRows.map((r) => ({
+          NO_BILL: null,
+          SEND_DATE: null,
+          RECIPIENT_TEL: null,
+          RECIPIENT_ADDRESS: null,
+          RECIPIENT_ZIPCODE: null,
+          SERIAL_NO: (r["เลขที่บาร์โค้ด"] || "").toString().trim(),
+          REFERENCE: (r["เลขที่บิล"] || "").toString().trim(),
+          CUSTOMER_NAME: "VGT",
+          RECIPIENT_CODE: (r["รหัสอ้างอิง"] || "").toString().trim(),
+          RECIPIENT_NAME: (r["ผู้รับ"] || "").toString().trim(),
+          RECIPIENT_SUBDISTRICT: (r["ตำบล"] || "").toString().trim(),
+          RECIPIENT_DISTRICT: (r["อำเภอ"] || "").toString().trim(),
+          RECIPIENT_PROVINCE: (r["จังหวัด"] || "").toString().trim(),
+          TO_DC: (r["DCปลายทาง"] || "").toString().trim(),
+        }));
+
+        console.log("rawRows[0] =", rawRows[0]);
+        console.log("mapped[0] =", mapped[0]);
+
+        setRows(mapped);
+        setDuplicates(findDuplicates(mapped));
       } catch (err) {
         console.error(err);
         setError("ไฟล์ไม่ถูกต้องหรืออ่านไม่สำเร็จ");
@@ -118,8 +137,7 @@ export default function BillImport() {
     setSuccess(null);
 
     try {
-      // สมมติ backend ทำ endpoint /import-bills (คุณไปเขียน controller รับ array นี้ได้เลย)
-      const res = await axios.post("https://xsendwork.com/api/import-bills", {
+      const res = await axios.post("https://xsendwork.com/api/import-vgt", {
         rows,
         user_id: user?.user_id,
         type: "IMPORT",
@@ -159,18 +177,13 @@ export default function BillImport() {
     return count; // key = serial, value = count
   };
 
-  const excelDateToJSDate = (serial: number): Date | null => {
-    if (!serial || isNaN(serial)) return null;
-    return new Date((serial - 25569) * 86400 * 1000);
-  };
-
   return (
     <div
       className={`font-thai w-full p-4 ${
         loading || saving ? "cursor-wait" : ""
       }`}
     >
-      <h2 className="text-xl font-bold mb-4">นำเข้า Excel (Bills)</h2>
+      <h2 className="text-xl font-bold mb-4">นำเข้า Excel (Bills VGT)</h2>
 
       {/* ส่วนอัปโหลดไฟล์ */}
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
@@ -233,7 +246,7 @@ export default function BillImport() {
 
         {rows.length > 0 && (
           <table className="w-full table-fixed border-collapse">
-            <ResizableColumns headers={headers} pageKey="bill-import" />
+            <ResizableColumns headers={headers} pageKey="import-vgt" />
             <thead className="bg-gray-100"></thead>
             <tbody>
               {rows.map((row, idx) => (
@@ -245,34 +258,24 @@ export default function BillImport() {
                     {idx + 1}
                   </td>
 
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.NO_BILL || "-"}
+                  <td
+                    className={
+                      "px-3 py-1 border-b text-sm truncate " +
+                      (duplicates[row.SERIAL_NO] > 1
+                        ? "text-red-500 font-bold"
+                        : "")
+                    }
+                  >
+                    {row.SERIAL_NO || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.REFERENCE || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.SEND_DATE && excelDateToJSDate(Number(row.SEND_DATE))
-                      ? format(
-                          excelDateToJSDate(Number(row.SEND_DATE))!,
-                          "dd/MM/yyyy"
-                        )
-                      : "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.CUSTOMER_NAME || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.RECIPIENT_CODE || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.RECIPIENT_NAME || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_TEL || "-"}
-                  </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_ADDRESS || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.RECIPIENT_SUBDISTRICT || "-"}
@@ -284,17 +287,7 @@ export default function BillImport() {
                     {row.RECIPIENT_PROVINCE || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.RECIPIENT_ZIPCODE || "-"}
-                  </td>
-                  <td
-                    className={
-                      "px-3 py-1 border-b text-sm truncate " +
-                      (duplicates[row.SERIAL_NO] > 1
-                        ? "text-red-500 font-bold"
-                        : "")
-                    }
-                  >
-                    {row.SERIAL_NO || "-"}
+                    {row.TO_DC || "-"}
                   </td>
                 </tr>
               ))}

@@ -11,6 +11,7 @@ interface Bill {
   receive_code: string;
   name: string;
   surname: string;
+  dc_id: string;
   license_plate: string | null;
   warehouse_name: string;
   sign: string;
@@ -77,7 +78,7 @@ export default function BillPage() {
             {b.name} {b.surname}
           </h3>
           <p className="text-gray-600 mb-1">
-            <span className="font-semibold">เลขที่บิล:</span>
+            <span className="font-semibold">หมายเลขกล่อง:</span>
             <a
               href={b.receive_code}
               target="_blank"

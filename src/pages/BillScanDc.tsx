@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 type BillRow = {
   id: number;
@@ -18,16 +19,21 @@ export default function BillScanDc() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const typingTimer = useRef<number | null>(null);
-
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const { user } = useAuth();
 
-  
   const fetchPendingBills = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const res = await axios.get("https://xsendwork.com/api/bills-warehouse", {});
+      const res = await axios.get("https://xsendwork.com/api/bills-dc", {
+        params: {
+          warehouse_accept: "Y",
+          dc_accept: "N",
+          user_id: user?.user_id,
+        },
+      });
 
       // backend ที่เราเขียนส่งกลับ { success, data: [...] }
       const data: BillRow[] = res.data.data || [];
@@ -55,47 +61,6 @@ export default function BillScanDc() {
     e.preventDefault();
     handleScanSerial();
   };
-
-  // const handleScanSerial = () => {
-  //   const serial = serialInput.trim();
-  //   if (!serial) return;
-
-  //   setError(null);
-  //   setInfo(null);
-
-  //   // หาในฝั่งซ้าย (pending)
-  //   const index = pendingRows.findIndex((row) => row.SERIAL_NO === serial);
-
-  //   if (index === -1) {
-  //     // ถ้าไม่เจอในฝั่งซ้าย ลองเช็คว่าถูกยิงไปแล้วหรือยัง
-  //     const alreadyIndex = scannedRows.findIndex(
-  //       (row) => row.SERIAL_NO === serial
-  //     );
-
-  //     if (alreadyIndex !== -1) {
-  //       setError(`SERIAL_NO ${serial} ถูกยิงไปแล้ว`);
-  //     } else {
-  //       setError(`ไม่พบ SERIAL_NO ${serial} ในรายการที่รอเช็ค`);
-  //     }
-
-  //     setSerialInput("");
-  //     return;
-  //   }
-
-  //   const row = pendingRows[index];
-
-  //   // ย้ายจากซ้าย → ขวา
-  //   setPendingRows((prev) => prev.filter((_, i) => i !== index));
-  //   setScannedRows((prev) => [row, ...prev]); // ใส่ด้านบนสุด
-
-  //   setInfo(`SERIAL_NO ${serial} ยิงสำเร็จ`);
-  //   setSerialInput("");
-
-  //   // โฟกัสช่องยิงต่อ
-  //   if (inputRef.current) {
-  //     inputRef.current.focus();
-  //   }
-  // };
 
   const handleScanSerial = (value?: string) => {
     const serial = (value || serialInput).trim();
@@ -147,14 +112,13 @@ export default function BillScanDc() {
     try {
       const serials = scannedRows.map((r) => r.SERIAL_NO);
 
-      await axios.post("https://xsendwork.com/api/bills-warehouse/accept", {
+      await axios.post("https://xsendwork.com/api/bills-dc/accept", {
         serials,
-        accept_flag: "Y", 
+        accept_flag: "Y",
       });
 
       setInfo(`บันทึกผลการยิงแล้วจำนวน ${serials.length} รายการ`);
 
-      // รีโหลดฝั่งซ้ายใหม่ และเคลียร์ฝั่งขวา
       await fetchPendingBills();
       setScannedRows([]);
     } catch (err) {
@@ -169,50 +133,34 @@ export default function BillScanDc() {
 
   return (
     <div className="font-thai w-full p-4">
-      <h2 className="text-xl font-bold mb-4">ยิงเทียบพัสดุ (คลัง 345)</h2>
+      <h2 className="text-xl font-bold mb-4">ยิงเทียบพัสดุ (คลัง DC)</h2>
 
       {/* ส่วนช่องยิงบาร์โค้ด */}
       <form
         onSubmit={handleSubmit}
         className="mb-4 flex flex-col md:flex-row items-start md:items-center gap-2"
       >
-        <label className="text-sm font-medium">ยิงบาร์โค้ด SERIAL_NO:</label>
-        {/* <input
-          ref={inputRef}
-          type="text"
-          value={serialInput}
-          onChange={(e) => setSerialInput(e.target.value)}
-          className="border rounded px-2 py-1 text-sm w-64"
-          placeholder="ยิงบาร์โค้ดแล้วกด Enter"
-        /> */}
+        <label className="text-sm font-medium">ยิงบาร์โค้ด :</label>
+
         <input
           ref={inputRef}
           type="text"
           value={serialInput}
           onChange={(e) => {
-            const value = e.target.value;
+            const value = e.target.value.trim();
             setSerialInput(value);
 
-            // ถ้ามี timer เดิม → เคลียร์ก่อน
             if (typingTimer.current) {
               clearTimeout(typingTimer.current);
             }
 
-            // ตั้งดีเลย์ 150ms → คิดว่าเป็นการยิงบาร์โค้ดเสร็จแล้ว
             typingTimer.current = setTimeout(() => {
-              handleScanSerial(value);
+              handleScanSerial(value.trim());
             }, 150);
           }}
           className="border rounded px-2 py-1 text-sm w-64"
-          placeholder="ยิงบาร์โค้ด"
+          placeholder="SERIAL_NO"
         />
-
-        {/* <button
-          type="submit"
-          className="px-4 py-2 rounded bg-blue-600 text-white text-sm"
-        >
-          ตกลง
-        </button> */}
 
         <div className="ml-auto flex flex-col md:flex-row items-start md:items-center gap-2 text-lg text-gray-600">
           <div>
@@ -278,7 +226,9 @@ export default function BillScanDc() {
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-1 border-b w-14">ลำดับ</th>
-                    <th className="px-2 py-1 border-b w-40">SERIAL_NO</th>
+                    <th className="px-2 py-1 border-b min-w-[220px]">
+                      SERIAL_NO
+                    </th>
                     <th className="px-2 py-1 border-b">CUSTOMER_NAME</th>
                     <th className="px-2 py-1 border-b">DC ปลายทาง</th>
                   </tr>
@@ -292,7 +242,7 @@ export default function BillScanDc() {
                       <td className="px-2 py-1 border-b text-center">
                         {idx + 1}
                       </td>
-                      <td className="px-2 py-1 border-b font-semibold truncate bg-red-600">
+                      <td className="px-2 py-1 border-b font-semibold text-lg bg-red-500">
                         {row.SERIAL_NO}
                       </td>
                       <td className="px-2 py-1 border-b truncate">
@@ -328,7 +278,9 @@ export default function BillScanDc() {
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-1 border-b w-14">ลำดับ</th>
-                    <th className="px-2 py-1 border-b w-40">SERIAL_NO</th>
+                    <th className="px-2 py-1 border-b min-w-[220px]">
+                      SERIAL_NO
+                    </th>
                     <th className="px-2 py-1 border-b">CUSTOMER_NAME</th>
                     <th className="px-2 py-1 border-b">DC ปลายทาง</th>
                   </tr>
@@ -342,13 +294,13 @@ export default function BillScanDc() {
                       <td className="px-2 py-1 border-b text-center">
                         {idx + 1}
                       </td>
-                      <td className="px-2 py-1 border-b font-semibold truncate bg-green-600">
+                      <td className="px-2 py-1 border-b font-semibold text-lg bg-green-400">
                         {row.SERIAL_NO}
                       </td>
                       <td className="px-2 py-1 border-b truncate">
                         {row.CUSTOMER_NAME || "-"}
                       </td>
-                       <td className="px-2 py-1 border-b truncate">
+                      <td className="px-2 py-1 border-b truncate">
                         {row.warehouse_name || "-"}
                       </td>
                     </tr>

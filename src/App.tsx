@@ -38,6 +38,10 @@ import BillImport from "./pages/BillImport";
 import BillManual from "./pages/BillManual";
 import BillScanWarehouse from "./pages/BillScanWarehouse";
 import BillScanDc from "./pages/BillScanDc";
+import BillImportADV from "./pages/BillImportADV";
+import BillImportVGT from "./pages/BillImportVGT";
+import PrintLabel from "./pages/PrintLabel";
+import LabelPage from "./pages/LabelPage";
 
 export default function App() {
   return (
@@ -141,9 +145,13 @@ export default function App() {
               <Route path="/vgt" element={<Vgt />} />
               <Route path="/bills" element={<Bills />} />
               <Route path="/import" element={<BillImport />} />
+              <Route path="/importvgt" element={<BillImportVGT />} />
+              <Route path="/importadv" element={<BillImportADV />} />
               <Route path="/input" element={<BillManual />} />
               <Route path="/warehouse-scan" element={<BillScanWarehouse />} />
               <Route path="/dc-scan" element={<BillScanDc />} />
+              <Route path="/labels" element={<PrintLabel />} />
+              <Route path="/label" element={<LabelPage />} />
 
               {/* Forms */}
               {/* <Route path="/form-elements" element={<FormElements />} /> */}

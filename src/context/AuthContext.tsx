@@ -6,7 +6,7 @@ export interface UserType {
   first_name: string;
   last_name: string;
   license_plate?: string;
-  dc_id?: number;
+  dc_name?: number;
   role_id: number;
 }
 interface AuthContextType {

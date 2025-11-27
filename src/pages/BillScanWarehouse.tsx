@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
 import axios from "axios";
+import { FilterDropdown } from "../components/dropdown/FilterDropdown";
 
 type BillRow = {
   id: number;
@@ -14,22 +15,25 @@ export default function BillScanWarehouse() {
   const [scannedRows, setScannedRows] = useState<BillRow[]>([]); // ฝั่งขวา
   const [serialInput, setSerialInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false); // ⭐ เพิ่ม state saving
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const typingTimer = useRef<number | null>(null);
-
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  
+  // ⭐ state filter ใหม่
+  const [customerFilter, setCustomerFilter] = useState("");
+  const [warehouseFilter, setWarehouseFilter] = useState("");
+
   const fetchPendingBills = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const res = await axios.get("https://xsendwork.com/api/bills-warehouse", {});
-
-      // backend ที่เราเขียนส่งกลับ { success, data: [...] }
+      const res = await axios.get(
+        "https://xsendwork.com/api/bills-warehouse",
+        {}
+      );
       const data: BillRow[] = res.data.data || [];
       setPendingRows(data);
     } catch (err) {
@@ -46,56 +50,13 @@ export default function BillScanWarehouse() {
 
   // โฟกัสช่องยิงตลอด
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    inputRef.current?.focus();
   }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     handleScanSerial();
   };
-
-  // const handleScanSerial = () => {
-  //   const serial = serialInput.trim();
-  //   if (!serial) return;
-
-  //   setError(null);
-  //   setInfo(null);
-
-  //   // หาในฝั่งซ้าย (pending)
-  //   const index = pendingRows.findIndex((row) => row.SERIAL_NO === serial);
-
-  //   if (index === -1) {
-  //     // ถ้าไม่เจอในฝั่งซ้าย ลองเช็คว่าถูกยิงไปแล้วหรือยัง
-  //     const alreadyIndex = scannedRows.findIndex(
-  //       (row) => row.SERIAL_NO === serial
-  //     );
-
-  //     if (alreadyIndex !== -1) {
-  //       setError(`SERIAL_NO ${serial} ถูกยิงไปแล้ว`);
-  //     } else {
-  //       setError(`ไม่พบ SERIAL_NO ${serial} ในรายการที่รอเช็ค`);
-  //     }
-
-  //     setSerialInput("");
-  //     return;
-  //   }
-
-  //   const row = pendingRows[index];
-
-  //   // ย้ายจากซ้าย → ขวา
-  //   setPendingRows((prev) => prev.filter((_, i) => i !== index));
-  //   setScannedRows((prev) => [row, ...prev]); // ใส่ด้านบนสุด
-
-  //   setInfo(`SERIAL_NO ${serial} ยิงสำเร็จ`);
-  //   setSerialInput("");
-
-  //   // โฟกัสช่องยิงต่อ
-  //   if (inputRef.current) {
-  //     inputRef.current.focus();
-  //   }
-  // };
 
   const handleScanSerial = (value?: string) => {
     const serial = (value || serialInput).trim();
@@ -104,7 +65,6 @@ export default function BillScanWarehouse() {
     setError(null);
     setInfo(null);
 
-    // หาในฝั่งซ้าย
     const index = pendingRows.findIndex((row) => row.SERIAL_NO === serial);
 
     if (index === -1) {
@@ -122,15 +82,12 @@ export default function BillScanWarehouse() {
       return;
     }
 
-    // ย้ายจากซ้าย → ขวา
     const row = pendingRows[index];
     setPendingRows((prev) => prev.filter((_, i) => i !== index));
     setScannedRows((prev) => [row, ...prev]);
 
     setInfo(`ยิง SERIAL_NO ${serial} สำเร็จ`);
     setSerialInput("");
-
-    // โฟกัสช่องยิงต่อ
     inputRef.current?.focus();
   };
 
@@ -149,12 +106,11 @@ export default function BillScanWarehouse() {
 
       await axios.post("https://xsendwork.com/api/bills-warehouse/accept", {
         serials,
-        accept_flag: "Y", 
+        accept_flag: "Y",
       });
 
       setInfo(`บันทึกผลการยิงแล้วจำนวน ${serials.length} รายการ`);
 
-      // รีโหลดฝั่งซ้ายใหม่ และเคลียร์ฝั่งขวา
       await fetchPendingBills();
       setScannedRows([]);
     } catch (err) {
@@ -167,6 +123,54 @@ export default function BillScanWarehouse() {
 
   const totalCount = pendingRows.length + scannedRows.length;
 
+  const customerOptions = Array.from(
+    new Set(
+      [...pendingRows, ...scannedRows]
+        .map((r) => r.CUSTOMER_NAME)
+        .filter((v) => !!v)
+    )
+  );
+
+  const warehouseOptions = Array.from(
+    new Set(
+      [...pendingRows, ...scannedRows]
+        .map((r) => r.warehouse_name)
+        .filter((v) => !!v)
+    )
+  );
+
+  // ⭐ ฟังก์ชันช่วย normalize string
+  const normalize = (s: string | null | undefined) =>
+    (s || "").toLowerCase().trim();
+
+  const customerFilterNorm = normalize(customerFilter);
+  const warehouseFilterNorm = normalize(warehouseFilter);
+
+  // ⭐ filter ข้อมูลตาม CUSTOMER_NAME + warehouse_name
+  const filteredPendingRows = pendingRows.filter((row) => {
+    const customerMatch =
+      !customerFilterNorm ||
+      normalize(row.CUSTOMER_NAME).includes(customerFilterNorm);
+
+    const warehouseMatch =
+      !warehouseFilterNorm ||
+      normalize(row.warehouse_name).includes(warehouseFilterNorm);
+
+    return customerMatch && warehouseMatch;
+  });
+
+  const filteredScannedRows = scannedRows.filter((row) => {
+    const customerMatch =
+      !customerFilterNorm ||
+      normalize(row.CUSTOMER_NAME).includes(customerFilterNorm);
+
+    const warehouseMatch =
+      !warehouseFilterNorm ||
+      normalize(row.warehouse_name).includes(warehouseFilterNorm);
+
+    return customerMatch && warehouseMatch;
+  });
+
   return (
     <div className="font-thai w-full p-4">
       <h2 className="text-xl font-bold mb-4">ยิงเทียบพัสดุ (คลัง 345)</h2>
@@ -176,43 +180,27 @@ export default function BillScanWarehouse() {
         onSubmit={handleSubmit}
         className="mb-4 flex flex-col md:flex-row items-start md:items-center gap-2"
       >
-        <label className="text-sm font-medium">ยิงบาร์โค้ด SERIAL_NO:</label>
-        {/* <input
-          ref={inputRef}
-          type="text"
-          value={serialInput}
-          onChange={(e) => setSerialInput(e.target.value)}
-          className="border rounded px-2 py-1 text-sm w-64"
-          placeholder="ยิงบาร์โค้ดแล้วกด Enter"
-        /> */}
+        <label className="text-sm font-medium">ยิงบาร์โค้ด :</label>
+
         <input
           ref={inputRef}
           type="text"
           value={serialInput}
           onChange={(e) => {
-            const value = e.target.value;
+            const value = e.target.value.trim();
             setSerialInput(value);
 
-            // ถ้ามี timer เดิม → เคลียร์ก่อน
             if (typingTimer.current) {
-              clearTimeout(typingTimer.current);
+              window.clearTimeout(typingTimer.current);
             }
 
-            // ตั้งดีเลย์ 150ms → คิดว่าเป็นการยิงบาร์โค้ดเสร็จแล้ว
-            typingTimer.current = setTimeout(() => {
-              handleScanSerial(value);
+            typingTimer.current = window.setTimeout(() => {
+              handleScanSerial(value.trim());
             }, 150);
           }}
-          className="border rounded px-2 py-1 text-sm w-64"
-          placeholder="ยิงบาร์โค้ด"
+          className="border rounded px-2 py-1 text-sm w-64 bg-white"
+          placeholder="SERIAL_NO"
         />
-
-        {/* <button
-          type="submit"
-          className="px-4 py-2 rounded bg-blue-600 text-white text-sm"
-        >
-          ตกลง
-        </button> */}
 
         <div className="ml-auto flex flex-col md:flex-row items-start md:items-center gap-2 text-lg text-gray-600">
           <div>
@@ -243,6 +231,40 @@ export default function BillScanWarehouse() {
         </div>
       </form>
 
+      {/* ⭐ แถว filter CUSTOMER_NAME + warehouse_name (เป็น dropdown ที่พิมพ์ได้) */}
+
+      <div className="mb-3 flex flex-col md:flex-row gap-3">
+        {/* กรองชื่อลูกค้า */}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+          <span className="text-sm font-medium whitespace-nowrap">
+            ชื่อลูกค้า:
+          </span>
+          <div className="w-48">
+            <FilterDropdown
+              value={customerFilter}
+              onChange={setCustomerFilter}
+              options={customerOptions}
+              placeholder="ค้นหาลูกค้า"
+            />
+          </div>
+        </div>
+
+        {/* กรอง DC */}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+          <span className="text-sm font-medium whitespace-nowrap">
+           DC ปลายทาง:
+          </span>
+          <div className="w-48">
+            <FilterDropdown
+              value={warehouseFilter}
+              onChange={setWarehouseFilter}
+              options={warehouseOptions}
+              placeholder="ค้นหา DC"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* แสดง error / info */}
       {error && (
         <div className="mb-3 text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded">
@@ -264,6 +286,8 @@ export default function BillScanWarehouse() {
           <div className="px-3 py-2 border-b bg-gray-100 flex justify-between items-center">
             <span className="font-medium text-sm">รายการรอเช็ค</span>
             <span className="text-lg text-red-600">
+              {/* แสดงจำนวนตาม filter / ทั้งหมด */}
+              {filteredPendingRows.length.toLocaleString()} /{" "}
               {pendingRows.length.toLocaleString()} รายการ
             </span>
           </div>
@@ -273,18 +297,24 @@ export default function BillScanWarehouse() {
               <div className="p-3 text-center text-gray-500 text-sm">
                 ไม่มีรายการที่รอเช็ค
               </div>
+            ) : filteredPendingRows.length === 0 ? (
+              <div className="p-3 text-center text-gray-500 text-sm">
+                ไม่พบรายการที่ตรงกับเงื่อนไขกรอง
+              </div>
             ) : (
               <table className="w-full table-fixed border-collapse text-sm">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-1 border-b w-14">ลำดับ</th>
-                    <th className="px-2 py-1 border-b w-40">SERIAL_NO</th>
+                    <th className="px-2 py-1 border-b min-w-[220px]">
+                      SERIAL_NO
+                    </th>
                     <th className="px-2 py-1 border-b">CUSTOMER_NAME</th>
                     <th className="px-2 py-1 border-b">DC ปลายทาง</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pendingRows.map((row, idx) => (
+                  {filteredPendingRows.map((row, idx) => (
                     <tr
                       key={row.id}
                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -314,6 +344,7 @@ export default function BillScanWarehouse() {
           <div className="px-3 py-2 border-b bg-gray-100 flex justify-between items-center">
             <span className="font-medium text-sm">รายการที่ยิงแล้ว</span>
             <span className="text-lg text-green-600">
+              {filteredScannedRows.length.toLocaleString()} /{" "}
               {scannedRows.length.toLocaleString()} รายการ
             </span>
           </div>
@@ -323,18 +354,24 @@ export default function BillScanWarehouse() {
               <div className="p-3 text-center text-gray-500 text-sm">
                 ยังไม่มีรายการที่ถูกยิง
               </div>
+            ) : filteredScannedRows.length === 0 ? (
+              <div className="p-3 text-center text-gray-500 text-sm">
+                ไม่พบรายการที่ตรงกับเงื่อนไขกรอง
+              </div>
             ) : (
               <table className="w-full table-fixed border-collapse text-sm">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-1 border-b w-14">ลำดับ</th>
-                    <th className="px-2 py-1 border-b w-40">SERIAL_NO</th>
+                    <th className="px-2 py-1 border-b min-w-[220px]">
+                      SERIAL_NO
+                    </th>
                     <th className="px-2 py-1 border-b">CUSTOMER_NAME</th>
                     <th className="px-2 py-1 border-b">DC ปลายทาง</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {scannedRows.map((row, idx) => (
+                  {filteredScannedRows.map((row, idx) => (
                     <tr
                       key={row.id}
                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -342,13 +379,13 @@ export default function BillScanWarehouse() {
                       <td className="px-2 py-1 border-b text-center">
                         {idx + 1}
                       </td>
-                      <td className="px-2 py-1 border-b font-semibold text-lg  bg-green-400">
+                      <td className="px-2 py-1 border-b font-semibold text-lg bg-green-400">
                         {row.SERIAL_NO}
                       </td>
                       <td className="px-2 py-1 border-b truncate">
                         {row.CUSTOMER_NAME || "-"}
                       </td>
-                       <td className="px-2 py-1 border-b truncate">
+                      <td className="px-2 py-1 border-b truncate">
                         {row.warehouse_name || "-"}
                       </td>
                     </tr>
