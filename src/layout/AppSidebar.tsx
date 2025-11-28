@@ -485,22 +485,22 @@ const navItems: NavItem[] = [
       //   icon: <File size={20} />,
       // },
       {
-        name: "นำเข้า bills",
+        name: "import Excel",
         path: "/import",
         icon: <File size={20} />,
       },
       {
-        name: "นำเข้า VGT",
+        name: "import VGT",
         path: "/importvgt",
         icon: <File size={20} />,
       },
       {
-        name: "นำเข้า ADV",
+        name: "import ADV",
         path: "/importadv",
         icon: <File size={20} />,
       },
       {
-        name: "คีย์ bills",
+        name: "คีย์บิล",
         path: "/input",
         icon: <File size={20} />,
       },
@@ -510,17 +510,12 @@ const navItems: NavItem[] = [
         icon: <File size={20} />,
       },
       {
-        name: "Print",
-        path: "/preview",
-        icon: <File size={20} />,
-      },
-      {
-        name: "ยิงเทียบพัสดุ",
+        name: "Warehouse Scan",
         path: "/warehouse-scan",
         icon: <File size={20} />,
       },
       {
-        name: "ยิงลงจากรถ",
+        name: "DC Scan",
         path: "/dc-scan",
         icon: <File size={20} />,
       },

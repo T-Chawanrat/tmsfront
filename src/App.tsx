@@ -40,19 +40,18 @@ import BillScanWarehouse from "./pages/BillScanWarehouse";
 import BillScanDc from "./pages/BillScanDc";
 import BillImportADV from "./pages/BillImportADV";
 import BillImportVGT from "./pages/BillImportVGT";
-import PrintLabel from "./pages/PrintLabel";
 import LabelPage from "./pages/LabelPage";
 
 export default function App() {
   return (
     // <AuthProvider>
-      <ColumnWidthsProvider>
-        <Router basename="/tms">
-          <ScrollToTop />
-          <Routes>
-            {/* Dashboard Layout */}
-            <Route element={<AppLayout />}>
-              {/* <Route
+    <ColumnWidthsProvider>
+      <Router basename="/tms">
+        <ScrollToTop />
+        <Routes>
+          {/* Dashboard Layout */}
+          <Route element={<AppLayout />}>
+            {/* <Route
                 index
                 path="/"
                 element={
@@ -142,48 +141,46 @@ export default function App() {
                 }
               /> */}
 
-              <Route path="/vgt" element={<Vgt />} />
-              <Route path="/bills" element={<Bills />} />
-              <Route path="/import" element={<BillImport />} />
-              <Route path="/importvgt" element={<BillImportVGT />} />
-              <Route path="/importadv" element={<BillImportADV />} />
-              <Route path="/input" element={<BillManual />} />
-              <Route path="/warehouse-scan" element={<BillScanWarehouse />} />
-              <Route path="/dc-scan" element={<BillScanDc />} />
-              <Route path="/labels" element={<PrintLabel />} />
-              <Route path="/label" element={<LabelPage />} />
+            <Route path="/vgt" element={<Vgt />} />
+            <Route path="/bills" element={<Bills />} />
+            <Route path="/import" element={<BillImport />} />
+            <Route path="/importvgt" element={<BillImportVGT />} />
+            <Route path="/importadv" element={<BillImportADV />} />
+            <Route path="/input" element={<BillManual />} />
+            <Route path="/warehouse-scan" element={<BillScanWarehouse />} />
+            <Route path="/dc-scan" element={<BillScanDc />} />
+            <Route path="/labels" element={<LabelPage />} />
 
-              {/* Forms */}
-              {/* <Route path="/form-elements" element={<FormElements />} /> */}
+            {/* Forms */}
+            {/* <Route path="/form-elements" element={<FormElements />} /> */}
 
-              {/* Tables */}
-              {/* <Route path="/basic-tables" element={<BasicTables />} /> */}
+            {/* Tables */}
+            {/* <Route path="/basic-tables" element={<BasicTables />} /> */}
 
-              {/* Ui Elements */}
-              {/* <Route path="/alerts" element={<Alerts />} />
+            {/* Ui Elements */}
+            {/* <Route path="/alerts" element={<Alerts />} />
               <Route path="/avatars" element={<Avatars />} />
               <Route path="/badge" element={<Badges />} />
               <Route path="/buttons" element={<Buttons />} />
               <Route path="/images" element={<Images />} />
               <Route path="/videos" element={<Videos />} /> */}
 
-              {/* Charts */}
-              {/* <Route path="/line-chart" element={<LineChart />} />
+            {/* Charts */}
+            {/* <Route path="/line-chart" element={<LineChart />} />
               <Route path="/bar-chart" element={<BarChart />} /> */}
-            </Route>
+          </Route>
 
-            {/* Auth Layout */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/" element={<SignIn />} />
-            {/* <Route path="/signup" element={<SignUp />} /> */}
+          {/* Auth Layout */}
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/" element={<SignIn />} />
+          {/* <Route path="/signup" element={<SignUp />} /> */}
 
-            {/* Fallback Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-      </ColumnWidthsProvider>
+          {/* Fallback Route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </ColumnWidthsProvider>
 
-    // </AuthProvider> 
-
+    // </AuthProvider>
   );
 }
