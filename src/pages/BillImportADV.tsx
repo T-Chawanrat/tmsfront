@@ -19,12 +19,12 @@ type ImportRow = {
 const headers = [
   "ลําดับ",
   "dpe_bill_no",
+  "box_sn",
   "cusname",
   "address",
   "province_name",
   "amphur_name",
   "district_name",
-  "box_sn",
   "postcode",
   "cusmobile",
 ];
@@ -101,9 +101,9 @@ export default function BillImportADV() {
         NO_BILL: null,
         REFERENCE: r.dpe_bill_no || null,
         SEND_DATE: null,
-        CUSTOMER_NAME: r.cusname || null,
+        CUSTOMER_NAME: "ADV",
         RECIPIENT_CODE: null,
-        RECIPIENT_NAME: null,
+        RECIPIENT_NAME: r.cusname || null,
         RECIPIENT_TEL: r.cusmobile || null,
         RECIPIENT_ADDRESS: r.address || null,
         RECIPIENT_SUBDISTRICT: r.district_name || null,
@@ -236,6 +236,16 @@ export default function BillImportADV() {
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.dpe_bill_no || "-"}
                   </td>
+                  <td
+                    className={
+                      "px-3 py-1 border-b text-sm truncate " +
+                      (duplicates[row.box_sn] > 1
+                        ? "text-red-500 font-bold"
+                        : "")
+                    }
+                  >
+                    {row.box_sn || "-"}
+                  </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.cusname || "-"}
                   </td>
@@ -251,16 +261,7 @@ export default function BillImportADV() {
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.district_name || "-"}
                   </td>
-                  <td
-                    className={
-                      "px-3 py-1 border-b text-sm truncate " +
-                      (duplicates[row.box_sn] > 1
-                        ? "text-red-500 font-bold"
-                        : "")
-                    }
-                  >
-                    {row.box_sn || "-"}
-                  </td>
+
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.postcode || "-"}
                   </td>

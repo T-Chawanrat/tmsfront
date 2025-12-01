@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import ResizableColumns from "../components/ResizableColumns";
 
-type LabelRow = {
+type BillRow = {
   id: number;
   SERIAL_NO: string;
   REFERENCE: string;
@@ -13,172 +14,386 @@ type LabelRow = {
   RECIPIENT_DISTRICT: string;
   RECIPIENT_PROVINCE: string;
   RECIPIENT_ZIPCODE: string;
+  warehouse_name: string;
+};
+
+type LabelRow = BillRow & {
   barcode_url: string;
   qr_url: string;
 };
 
-export default function PrintLabel() {
+export default function LabelPage() {
   const { user } = useAuth();
-  const [labels, setLabels] = useState<LabelRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
+  const [bills, setBills] = useState<BillRow[]>([]);
+  const [labels, setLabels] = useState<LabelRow[]>([]);
+  const [loadingBills, setLoadingBills] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<"bills" | "labels">("bills");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === bills.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(bills.map((b) => b.id));
+    }
+  };
+
+  // 1) โหลด bills_data + label info (ของ user นี้) จาก /api/print-labels แค่ครั้งเดียว
   useEffect(() => {
-    const fetchLabels = async () => {
+    const fetchBillsAndLabels = async () => {
       if (!user?.user_id) return;
-      setLoading(true);
+      setLoadingBills(true);
       setError(null);
 
       try {
-        const res = await axios.get(
-          "https://xsendwork.com/api/print-labels",
-          {
-            params: { user_id: user.user_id },
-          }
-        );
+        const res = await axios.get("https://xsendwork.com/api/print-labels", {
+          params: {
+            user_id: user.user_id,
+          },
+        });
 
         if (res.data?.success) {
-          setLabels(res.data.data || []);
+          const rows = res.data.data || [];
+          setBills(rows); // ใช้แสดงตารางลิสต์
+          setLabels(rows); // ใช้ preview labels (มี barcode_url, qr_url แล้ว)
         } else {
-          setError(res.data?.message || "ดึงข้อมูล label ไม่สำเร็จ");
+          setError(res.data?.message || "ดึงรายการบิลไม่สำเร็จ");
         }
       } catch (err) {
         console.error(err);
-        setError("เกิดข้อผิดพลาดในการดึงข้อมูล label");
+        setError("เกิดข้อผิดพลาดในการดึงรายการบิล");
       } finally {
-        setLoading(false);
+        setLoadingBills(false);
       }
     };
 
-    fetchLabels();
+    fetchBillsAndLabels();
   }, [user?.user_id]);
+
+  // 2) กดปุ่มสร้าง Label → แค่เปลี่ยน step ไปหน้า preview (ไม่ต้องยิง API อีก)
+  const handleCreateLabels = () => {
+    if (!selectedIds.length) {
+      setError("กรุณาเลือกรายการอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    // filter เฉพาะที่ถูกเลือก
+    const filtered = labels.filter((r) => selectedIds.includes(r.id));
+    setLabels(filtered);
+
+    setStep("labels");
+  };
 
   const handlePrint = () => {
     window.print();
   };
 
+  const handleBackToBills = () => {
+    setStep("bills");
+  };
+
+  const headers = [
+    <div className="flex justify-center w-[10px]" key="select-all">
+      <input
+        type="checkbox"
+        checked={bills.length > 0 && selectedIds.length === bills.length}
+        onChange={toggleSelectAll}
+      />
+    </div>,
+    "ลำดับ",
+    "SERIAL_NO",
+    "REFERENCE",
+    "CUSTOMER_NAME",
+    "RECIPIENT_ADDRESS",
+    "warehouse_name",
+  ];
+
   return (
     <div className="font-thai w-full p-4 bg-gray-100 print:bg-white">
-      {/* ส่วนหัว + ปุ่ม (จะถูกซ่อนตอนพิมพ์) */}
+      {/* Header + ปุ่มด้านบน (ซ่อนตอน print) */}
       <div className="mb-4 flex items-center justify-between print:hidden">
-        <h2 className="text-xl font-bold">พิมพ์สติ๊กเกอร์ (Labels)</h2>
+        <h2 className="text-xl font-bold">
+          {step === "bills"
+            ? "รายการบิลสำหรับสร้าง Label"
+            : "พิมพ์สติ๊กเกอร์ (Labels)"}
+        </h2>
 
         <div className="flex gap-2 items-center">
           <span className="text-sm text-gray-600">
-            ผู้ใช้งาน: {user?.first_name || user?.username}
+            ผู้ใช้: {user?.first_name || user?.username}
           </span>
-          <button
-            onClick={handlePrint}
-            disabled={!labels.length}
-            className={`px-4 py-2 rounded text-white font-medium ${
-              !labels.length
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            พิมพ์
-          </button>
+
+          {step === "bills" ? (
+            <button
+              onClick={handleCreateLabels}
+              disabled={!bills.length}
+              className={`px-4 py-2 rounded text-white font-medium ${
+                !bills.length
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              สร้าง Label สำหรับรายการนี้
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleBackToBills}
+                className="px-3 py-2 rounded text-sm font-medium bg-gray-300 hover:bg-gray-400 text-gray-800"
+              >
+                ย้อนกลับ
+              </button>
+              <button
+                onClick={handlePrint}
+                disabled={!labels.length}
+                className={`px-4 py-2 rounded text-white font-medium ${
+                  !labels.length
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
+                }`}
+              >
+                พิมพ์
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* แสดงสถานะโหลด/ error */}
-      {loading && (
-        <div className="text-center text-gray-600">กำลังโหลดข้อมูล...</div>
-      )}
+      {/* แสดง error */}
       {error && (
         <div className="mb-4 text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded">
           {error}
         </div>
       )}
-      {!loading && !error && labels.length === 0 && (
-        <div className="text-center text-gray-500">
-          ยังไม่มีข้อมูลสำหรับพิมพ์ในวันนี้
-        </div>
+
+      {/* STEP 1: ตาราง bills_data */}
+      {step === "bills" && (
+        <>
+          {loadingBills && (
+            <div className="text-center text-gray-600">
+              กำลังโหลดรายการบิล...
+            </div>
+          )}
+
+          {!loadingBills && !bills.length && !error && (
+            <div className="text-center text-gray-500">
+              ยังไม่มีบิลสำหรับสร้าง Label
+            </div>
+          )}
+
+          {/* {bills.length > 0 && (
+            <div className="overflow-x-auto border border-gray-300 rounded bg-white">
+              <table className="w-sm table-fixed border-collapse"> */}
+                {/* หัวตาราง: ใช้ ResizableColumns + ให้มันวาด checkbox all เป็นคอลัมน์แรก */}
+                {/* <ResizableColumns headers={headers} pageKey="labels-page" /> */}
+{/* 
+                <tbody>
+                  {bills.map((b, idx) => (
+                    <tr
+                      key={b.id}
+                      className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    > */}
+                      {/* คอลัมน์แรก: checkbox ของแต่ละแถว */}
+                      {/* <td className="px-2 py-1 border-b text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(b.id)}
+                          onChange={() => toggleSelect(b.id)}
+                        />
+                      </td> */}
+
+                      {/* ลำดับ */}
+                      {/* <td className="px-3 py-1 border-b text-sm bg-gray-100 font-semibold text-center">
+                        {idx + 1}
+                      </td>
+                      <td className="px-3 py-1 border-b text-sm truncate">
+                        {b.SERIAL_NO || "-"}
+                      </td>
+                      <td className="px-3 py-1 border-b text-sm truncate">
+                        {b.REFERENCE || "-"}
+                      </td>
+                      <td className="px-3 py-1 border-b text-sm truncate">
+                        {b.CUSTOMER_NAME || "-"}
+                      </td>
+                      <td className="px-3 py-1 border-b text-sm truncate">
+                        {b.RECIPIENT_ADDRESS
+                          ? `${b.RECIPIENT_NAME || ""} ${
+                              b.RECIPIENT_ADDRESS
+                            } ต.${b.RECIPIENT_SUBDISTRICT} อ.${
+                              b.RECIPIENT_DISTRICT
+                            } จ.${b.RECIPIENT_PROVINCE} ${b.RECIPIENT_ZIPCODE}`
+                          : "-"}
+                      </td>
+                      <td className="px-3 py-1 border-b text-sm truncate">
+                        {b.warehouse_name || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )} */}
+
+          {bills.length > 0 && (
+  <div className="border border-gray-300 rounded bg-white">
+    {/* เลื่อนแนวนอนกรณีจอเล็ก */}
+    <div className="overflow-x-auto">
+      {/* เลื่อนแนวตั้ง (ลิสต์ยาว) */}
+      <div className="max-h-[85vh] overflow-y-auto">
+        <table className="w-sm table-fixed border-collapse">
+          {/* หัวตาราง: ใช้ ResizableColumns */}
+          <ResizableColumns headers={headers} pageKey="labels-page" />
+
+          <tbody>
+            {bills.map((b, idx) => (
+              <tr
+                key={b.id}
+                className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+              >
+                {/* คอลัมน์แรก: checkbox */}
+                <td className="w-[10px] px-2 py-1 border-b border-gray-300 text-center align-middle">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(b.id)}
+                    onChange={() => toggleSelect(b.id)}
+                  />
+                </td>
+
+                {/* ลำดับ */}
+                <td className="w-[60px] px-3 py-1 border-b border-gray-300 text-sm bg-gray-100 font-semibold text-center">
+                  {idx + 1}
+                </td>
+
+                <td className="px-3 py-1 border-b border-gray-300 text-sm truncate">
+                  {b.SERIAL_NO || "-"}
+                </td>
+                <td className="px-3 py-1 border-b border-gray-300 text-sm truncate">
+                  {b.REFERENCE || "-"}
+                </td>
+                <td className="px-3 py-1 border-b border-gray-300 text-sm truncate">
+                  {b.CUSTOMER_NAME || "-"}
+                </td>
+                <td className="px-3 py-1 border-b border-gray-300 text-sm truncate">
+                  {b.RECIPIENT_ADDRESS
+                    ? `${b.RECIPIENT_NAME || ""} ${
+                        b.RECIPIENT_ADDRESS
+                      } ต.${b.RECIPIENT_SUBDISTRICT} อ.${
+                        b.RECIPIENT_DISTRICT
+                      } จ.${b.RECIPIENT_PROVINCE} ${b.RECIPIENT_ZIPCODE}`
+                    : "-"}
+                </td>
+                <td className="px-3 py-1 border-b border-gray-300 text-sm truncate">
+                  {b.warehouse_name || "-"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
+
+
+          
+        </>
       )}
 
-      {/* พื้นที่ Preview / Print */}
-      <div
-        className="
-          flex flex-wrap gap-4
-          print:gap-0 print:m-0
-        "
-      >
-        {labels.map((row) => (
-          <div
-            key={row.id}
-            className="
-              bg-white border border-gray-300 rounded shadow-sm
-              p-2 box-border
-              print:shadow-none print:border print:border-black
-            "
-            style={{
-              width: "10cm",
-              height: "7.5cm",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            {/* บรรทัดบน: Barcode + ข้อมูลพื้นฐาน */}
-            <div className="flex flex-col gap-1">
-              <div className="text-xs font-semibold">
-                เลขที่บาร์โค้ด: {row.SERIAL_NO}
-              </div>
-              <div className="text-xs">
-                เลขที่บิล: {row.REFERENCE || "-"}
-              </div>
-              <div className="text-xs">
-                ลูกค้า: {row.CUSTOMER_NAME || "-"}
+      {/* STEP 2: Preview Labels + Print */}
+      {step === "labels" && (
+        <div
+          className="
+            flex flex-wrap gap-4
+            print:gap-0 print:m-0
+          "
+        >
+          {labels.map((row) => (
+            <div
+              key={row.id}
+              className="
+                bg-white border border-gray-300 rounded shadow-sm
+                p-2 box-border
+                print:shadow-none print:border print:border-black
+              "
+              style={{
+                width: "10cm",
+                height: "7.5cm",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <div className="flex flex-col gap-1">
+                {row.barcode_url && (
+                  <div className="flex flex-col">
+                    <img
+                      src={row.barcode_url}
+                      alt={`BARCODE_${row.SERIAL_NO}`}
+                      style={{ maxWidth: "100%", maxHeight: "1.5cm" }}
+                    />
+
+                    {/* 🔥 ตัวหนังสือใต้บาร์โค้ด */}
+                    <div className="text-lg tracking-widest font-bold text-center">
+                      {row.SERIAL_NO}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Barcode */}
-              {row.barcode_url && (
-                <div className="mt-1 flex justify-center">
-                  <img
-                    src={row.barcode_url}
-                    alt={`BARCODE_${row.SERIAL_NO}`}
-                    style={{ maxWidth: "100%", maxHeight: "1.8cm" }}
-                  />
+              {/* ที่อยู่ผู้รับ */}
+              <div className="text-[10px] leading-snug mt-1">
+                <div className="font-semibold">
+                  ผู้รับ: {row.RECIPIENT_NAME || "-"}
                 </div>
-              )}
-            </div>
+                <div>
+                  ที่อยู่: {row.RECIPIENT_ADDRESS || "-"}
+                  ต.{row.RECIPIENT_SUBDISTRICT || "-"} อ.
+                  {row.RECIPIENT_DISTRICT || "-"} จ.
+                  {row.RECIPIENT_PROVINCE || "-"} {row.RECIPIENT_ZIPCODE || ""}
+                </div>
+                <div>ปลายทาง: {row.warehouse_name || "-"}</div>
+              </div>
 
-            {/* บรรทัดกลาง: ที่อยู่ผู้รับ */}
-            <div className="text-[10px] leading-snug mt-1">
-              <div className="font-semibold">
-                ผู้รับ: {row.RECIPIENT_NAME || "-"}
-              </div>
-              <div>
-                ที่อยู่: {row.RECIPIENT_ADDRESS || "-"}
-              </div>
-              <div>
-                ต.{row.RECIPIENT_SUBDISTRICT || "-"} อ.
-                {row.RECIPIENT_DISTRICT || "-"} จ.
-                {row.RECIPIENT_PROVINCE || "-"}{" "}
-                {row.RECIPIENT_ZIPCODE || ""}
+              {/* QR + text เพิ่มเติม */}
+              <div className="flex justify-between items-center mt-1">
+                <div className="text-[10px]">
+                  <div>Ref: {row.REFERENCE || "-"}</div>
+
+                  <div>
+                    วันที่: {new Date().toLocaleDateString("th-TH")}{" "}
+                    &nbsp;&nbsp; เวลา:{" "}
+                    {new Date().toLocaleTimeString("th-TH", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{" "}
+                    น.
+                  </div>
+                  <div className="mt-1">
+                    จัดส่งโดย: บริษัท ทรานเทค แมนเนจเม้นท์ กรุ๊ปส์ จำกัด
+                  </div>
+                  <div>โทร. 065-005-2555</div>
+                </div>
+
+                {row.qr_url && (
+                  <img
+                    src={row.qr_url}
+                    alt={`QR_${row.SERIAL_NO}`}
+                    style={{ width: "2.8cm", height: "2.8cm" }}
+                  />
+                )}
               </div>
             </div>
-
-            {/* บรรทัดล่าง: QR + ข้อมูลเสริม */}
-            <div className="flex justify-between items-center mt-1">
-              {/* QR */}
-              {row.qr_url && (
-                <img
-                  src={row.qr_url}
-                  alt={`QR_${row.SERIAL_NO}`}
-                  style={{ width: "2.2cm", height: "2.2cm" }}
-                />
-              )}
-
-              {/* Text มุมขวา */}
-              <div className="text-[9px] text-right">
-                <div>Ref: {row.REFERENCE || "-"}</div>
-                <div>SN: {row.SERIAL_NO}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -40,7 +40,8 @@ import BillScanWarehouse from "./pages/BillScanWarehouse";
 import BillScanDc from "./pages/BillScanDc";
 import BillImportADV from "./pages/BillImportADV";
 import BillImportVGT from "./pages/BillImportVGT";
-import LabelPage from "./pages/LabelPage";
+import PrintLabel from "./pages/PrintLabel";
+import BillReport from "./pages/BillReport";
 
 export default function App() {
   return (
@@ -149,7 +150,8 @@ export default function App() {
             <Route path="/input" element={<BillManual />} />
             <Route path="/warehouse-scan" element={<BillScanWarehouse />} />
             <Route path="/dc-scan" element={<BillScanDc />} />
-            <Route path="/labels" element={<LabelPage />} />
+            <Route path="/labels" element={<PrintLabel />} />
+            <Route path="/report" element={<BillReport />} />
 
             {/* Forms */}
             {/* <Route path="/form-elements" element={<FormElements />} /> */}

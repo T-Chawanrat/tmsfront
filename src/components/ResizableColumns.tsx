@@ -113,7 +113,7 @@ import React, { useEffect, useRef } from "react";
 import { useColumnWidths } from "../context/ColumnWidths";
 
 interface ResizableColumnsProps {
-  headers: string[];
+  headers: any[];
   pageKey: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -220,18 +220,25 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
     <thead className="bg-gray-100">
       <tr>
         {headers.map((header, index) => {
-          const sortable = headerKeyMapping[header] && onSort;
-          const isActiveSort = sortBy === headerKeyMapping[header];
+          // ถ้า header เป็น string → ใช้กับ headerKeyMapping / sort ได้
+          const headerText = typeof header === "string" ? header : "";
+          const headerKey = headerText
+            ? headerKeyMapping[headerText]
+            : undefined;
+
+          const sortable = !!(headerKey && onSort);
+          const isActiveSort = sortable && sortBy === headerKey;
+
+          // ถ้า header ไม่ใช่ string (เช่น JSX checkbox all) → ให้ถือว่าเป็นคอลัมน์พิเศษ
+          const isCheckboxColumn = typeof header !== "string";
+
+          // ความกว้างคอลัมน์
+          const widthPx = isCheckboxColumn ? 40 : columnWidths[index] || 120;
 
           return (
-            // <th
-            //   key={index}
-            //   style={{ width: `${columnWidths[index] || 120}px` }}
-            //   className="relative px-4 py-2 border-b text-left border-gray-200 select-none"
-            // >
             <th
               key={index}
-              style={{ width: `${columnWidths[index] || 120}px` }}
+              style={{ width: `${widthPx}px` }}
               className="relative px-4 py-2 border-b text-left border-gray-200 select-none bg-gray-100 sticky top-0 z-20"
             >
               <div className="flex items-center justify-between">
@@ -240,8 +247,8 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
                     sortable ? "cursor-pointer flex items-center gap-1" : ""
                   }
                   onClick={
-                    sortable
-                      ? () => onSort && onSort(headerKeyMapping[header])
+                    sortable && headerKey
+                      ? () => onSort && onSort(headerKey)
                       : undefined
                   }
                   style={{
@@ -250,8 +257,10 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
                   tabIndex={sortable ? 0 : undefined}
                   role={sortable ? "button" : undefined}
                 >
+                  {/* แสดง header ตรง ๆ: จะเป็น string หรือ JSX ก็ได้ */}
                   {header}
-                  {/* sort icon */}
+
+                  {/* icon sort เฉพาะคอลัมน์ที่ sortable */}
                   {sortable && (
                     <span>
                       {isActiveSort ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
@@ -259,13 +268,16 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
                   )}
                 </span>
 
-                {/* เส้นสำหรับ resize + double-click auto fit */}
-                <span
-                  className="absolute right-0 top-0 h-full w-1 bg-transparent cursor-col-resize border-r-1 border-gray-300"
-                  onMouseDown={(e) => handleMouseDown(index, e)}
-                  onDoubleClick={(e) => handleAutoFit(index, e)}
-                  onTouchStart={(e) => handleTouchStart(index, e)}
-                />
+                {/* เส้นสำหรับ resize + double-click auto fit
+            👉 ไม่แสดงสำหรับคอลัมน์ checkbox */}
+                {!isCheckboxColumn && (
+                  <span
+                    className="absolute right-0 top-0 h-full w-1 bg-transparent cursor-col-resize border-r-1 border-gray-300"
+                    onMouseDown={(e) => handleMouseDown(index, e)}
+                    onDoubleClick={(e) => handleAutoFit(index, e)}
+                    onTouchStart={(e) => handleTouchStart(index, e)}
+                  />
+                )}
               </div>
             </th>
           );

@@ -524,6 +524,11 @@ const navItems: NavItem[] = [
         path: "/bills",
         icon: <File size={20} />,
       },
+      {
+        name: "report",
+        path: "/report",
+        icon: <File size={20} />,
+      },
     ],
   },
 ];

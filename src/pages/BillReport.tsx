@@ -1,0 +1,624 @@
+// import { useEffect, useState } from "react";
+// import axios from "axios";
+// import { useAuth } from "../context/AuthContext";
+// import ResizableColumns from "../components/ResizableColumns";
+
+// type BillReportRow = {
+//   id: number;
+//   NO_BILL: string | null;
+//   REFERENCE: string | null;
+//   SEND_DATE: string | null;
+//   CUSTOMER_NAME: string | null;
+//   RECIPIENT_CODE: string | null;
+//   RECIPIENT_NAME: string | null;
+//   RECIPIENT_TEL: string | null;
+//   RECIPIENT_ADDRESS: string | null;
+//   RECIPIENT_SUBDISTRICT: string | null;
+//   RECIPIENT_DISTRICT: string | null;
+//   RECIPIENT_PROVINCE: string | null;
+//   RECIPIENT_ZIPCODE: string | null;
+//   SERIAL_NO: string | null;
+//   user_id: number;
+//   create_date: string | null;
+//   create_time: string | null;
+//   warehouse_name: string | null;
+//   type: string | null;
+//   customer_input: "Y" | "N" | null;
+//   warehouse_accept: "Y" | "N" | null;
+//   dc_accept: "Y" | "N" | null;
+//   image: "Y" | "N" | null;
+//   sign: "Y" | "N" | null;
+//   warehouse_id: number | null;
+// };
+
+// const API_ENDPOINT = "https://xsendwork.com/api/bills-data";
+
+// export default function BillReport() {
+//   const { user } = useAuth();
+
+//   const [rows, setRows] = useState<BillReportRow[]>([]);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+
+//   const [searchSerial, setSearchSerial] = useState("");
+//   const [searchReference, setSearchReference] = useState("");
+
+//   const headers = [
+//     "ลำดับ",
+//     "SERIAL_NO",
+//     "REFERENCE",
+//     "ชื่อลูกค้า",
+//     "ผู้รับ / ที่อยู่",
+//     "ปลายทาง",
+//     "ประเภท",
+//     "สถานะ",
+//   ];
+
+//   // ----------------------------------------------------------------
+//   // ฟังก์ชันดึงข้อมูล (รองรับค่าค้นหาที่ส่งเข้ามา)
+//   // ----------------------------------------------------------------
+//   const fetchData = async (customSerial?: string, customReference?: string) => {
+//     if (!user?.user_id) return;
+
+//     const serial = customSerial ?? searchSerial;
+//     const reference = customReference ?? searchReference;
+
+//     setLoading(true);
+//     setError(null);
+
+//     try {
+//       const res = await axios.get(API_ENDPOINT, {
+//         params: {
+//           user_id: user.user_id,
+//           // ส่งให้ backend เฉพาะกรณีที่ยาว >= 3 ตัว
+//           SERIAL_NO: serial && serial.length >= 3 ? serial : undefined,
+//           REFERENCE: reference && reference.length >= 3 ? reference : undefined,
+//         },
+//       });
+
+//       if (res.data?.success) {
+//         setRows(res.data.data || []);
+//       } else {
+//         setError(res.data?.message || "ดึงข้อมูลไม่สำเร็จ");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       setError("เกิดข้อผิดพลาดในการดึงข้อมูล");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (user?.user_id) {
+//       fetchData("");
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [user?.user_id]);
+
+//   // ----------------------------------------------------------------
+//   // UI helper
+//   // ----------------------------------------------------------------
+//   const renderStatusBadge = (value: "Y" | "N" | null, label: string) => {
+//     if (!value) return null;
+//     const isYes = value === "Y";
+//     return (
+//       <span
+//         className={`inline-flex items-center rounded-full px-2 py-[2px] text-[10px] font-semibold ${
+//           isYes
+//             ? "bg-green-100 text-green-700 border border-green-300"
+//             : "bg-red-100 text-red-700 border border-red-300"
+//         }`}
+//       >
+//         {label}: {isYes ? "Y" : "N"}
+//       </span>
+//     );
+//   };
+
+//   const formatDateTime = (dateStr: string | null, timeStr: string | null) => {
+//     if (!dateStr && !timeStr) return "-";
+//     try {
+//       const d = dateStr ? new Date(dateStr) : null;
+//       const dateText = d
+//         ? d.toLocaleDateString("th-TH", {
+//             year: "numeric",
+//             month: "2-digit",
+//             day: "2-digit",
+//           })
+//         : "";
+//       const timeText = timeStr || "";
+//       return `${dateText} ${timeText}`.trim() || "-";
+//     } catch {
+//       return "-";
+//     }
+//   };
+
+//   return (
+//     <div className="font-thai w-full p-4 bg-gray-100">
+//       {/* Header */}
+//       <div className="mb-4 flex items-center justify-between">
+//         <h2 className="text-xl font-bold">รายงานรายการบิล (Bill Report)</h2>
+
+//         <div className="flex flex-col items-end text-sm text-gray-600">
+//           <span>ผู้ใช้: {user?.first_name || user?.username || "-"}</span>
+//           <span>จำนวนรายการ: {rows.length.toLocaleString("th-TH")}</span>
+//         </div>
+//       </div>
+
+//       {/* Search Panel */}
+//       <div className="mb-4 bg-white border border-gray-300 rounded shadow-sm p-3 flex flex-wrap gap-4 items-end">
+//         <div className="flex flex-col">
+//           <label className="text-xs text-gray-700 mb-1">ค้นหา SERIAL_NO</label>
+//           <input
+//             type="text"
+//             value={searchSerial}
+//             onChange={(e) => {
+//               const value = e.target.value;
+//               setSearchSerial(value);
+
+//               if (value.length === 0) {
+//                 // ลบหมด → โหลดทั้งหมด
+//                 fetchData("", searchReference);
+//               } else if (value.length >= 3) {
+//                 // พิมพ์ครบ 3 ตัวขึ้นไป → ค้น
+//                 fetchData(value, searchReference);
+//               }
+//               // ถ้า length 1–2 → ไม่ทำอะไร (ไม่ยิง API)
+//             }}
+//             className="border border-gray-300 rounded px-2 py-1 text-sm min-w-[220px]"
+//             placeholder="อย่างน้อย 3 ตัว เช่น BX2..."
+//           />
+//         </div>
+
+//         <div className="flex flex-col">
+//           <label className="text-xs text-gray-700 mb-1">ค้นหา REFERENCE</label>
+//           <input
+//             type="text"
+//             value={searchReference}
+//             onChange={(e) => {
+//               const value = e.target.value;
+//               setSearchReference(value);
+
+//               if (value.length === 0) {
+//                 // ลบหมด → โหลดทั้งหมด
+//                 fetchData(searchSerial, "");
+//               } else if (value.length >= 3) {
+//                 // พิมพ์ครบ 3 ตัวขึ้นไป → ค้น
+//                 fetchData(searchSerial, value);
+//               }
+//               // ถ้า length 1–2 → ไม่ทำอะไร
+//             }}
+//             className="border border-gray-300 rounded px-2 py-1 text-sm min-w-[220px]"
+//             placeholder="อย่างน้อย 3 ตัว เช่น TR6..."
+//           />
+//         </div>
+//       </div>
+
+//       {/* Error */}
+//       {error && (
+//         <div className="mb-3 text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded">
+//           {error}
+//         </div>
+//       )}
+
+//       {/* Loading */}
+//       {loading && (
+//         <div className="text-center text-gray-600 mt-4">กำลังโหลดข้อมูล...</div>
+//       )}
+
+//       {/* Table */}
+//       {!loading && rows.length === 0 && !error && (
+//         <div className="text-center text-gray-500 mt-4">
+//           ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา
+//         </div>
+//       )}
+
+//       {!loading && rows.length > 0 && (
+//         <div className="border border-gray-300 rounded bg-white shadow-sm">
+//           {/* เลื่อนแนวนอน */}
+//           <div className="overflow-x-auto w-full">
+//             {/* เลื่อนแนวตั้งเฉพาะส่วนข้อมูล */}
+//             <div className="max-h-[75vh] overflow-y-auto">
+//               <table className="border-collapse table-auto min-w-[1100px]">
+//                 {/* ให้ ResizableColumns เป็นคนกำหนดความกว้างคอลัมน์ */}
+//                 <ResizableColumns headers={headers} pageKey="bill-report" />
+
+//                 <tbody>
+//                   {rows.map((r, idx) => (
+//                     <tr
+//                       key={r.id}
+//                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+//                     >
+//                       {/* ลำดับ */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-center text-sm bg-gray-100 font-semibold">
+//                         {idx + 1}
+//                       </td>
+
+//                       {/* SERIAL_NO */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
+//                         {r.SERIAL_NO || "-"}
+//                       </td>
+
+//                       {/* REFERENCE */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
+//                         {r.REFERENCE || "-"}
+//                       </td>
+
+//                       {/* CUSTOMER_NAME */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
+//                         {r.CUSTOMER_NAME || "-"}
+//                       </td>
+
+//                       {/* ผู้รับ / ที่อยู่ */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-[11px] leading-snug truncate">
+//                         <div className="font-semibold">
+//                           {r.RECIPIENT_NAME || "-"}{" "}
+//                           {r.RECIPIENT_TEL ? `(${r.RECIPIENT_TEL})` : ""}
+//                         </div>
+//                         <div className="truncate">
+//                           {r.RECIPIENT_ADDRESS || "-"}{" "}
+//                           {r.RECIPIENT_SUBDISTRICT &&
+//                             `ต.${r.RECIPIENT_SUBDISTRICT}`}{" "}
+//                           {r.RECIPIENT_DISTRICT && `อ.${r.RECIPIENT_DISTRICT}`}{" "}
+//                           {r.RECIPIENT_PROVINCE && `จ.${r.RECIPIENT_PROVINCE}`}{" "}
+//                           {r.RECIPIENT_ZIPCODE || ""}
+//                         </div>
+//                         <div className="text-[10px] text-gray-500 mt-1">
+//                           สร้างเมื่อ:{" "}
+//                           {formatDateTime(r.create_date, r.create_time)}
+//                         </div>
+//                       </td>
+
+//                       {/* ปลายทาง */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-[11px]  leading-snug font-semibold">
+//                         {r.warehouse_name || "-"}
+//                       </td>
+
+//                       {/* Type */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-xs text-center">
+//                         <span className="inline-flex items-center rounded-full px-2 py-[2px] bg-gray-100 border border-gray-300">
+//                           {r.type || "-"}
+//                         </span>
+//                       </td>
+
+//                       {/* Status */}
+//                       <td className="px-2 py-1 border-b border-gray-300 text-[10px]">
+//                         <div className="flex flex-wrap gap-1">
+//                           {renderStatusBadge(r.customer_input, "ลูกค้าสร้าง")}
+//                           {renderStatusBadge(r.warehouse_accept, "คลังรับเข้า")}
+//                           {renderStatusBadge(r.dc_accept, "DC รับเข้า")}
+//                           {renderStatusBadge(r.image, "รูปภาพ")}
+//                           {renderStatusBadge(r.sign, "ลายเซ็น")}
+//                         </div>
+//                       </td>
+//                     </tr>
+//                   ))}
+//                 </tbody>
+//               </table>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import ResizableColumns from "../components/ResizableColumns";
+
+type BillReportRow = {
+  id: number;
+  NO_BILL: string | null;
+  REFERENCE: string | null;
+  SEND_DATE: string | null;
+  CUSTOMER_NAME: string | null;
+  RECIPIENT_CODE: string | null;
+  RECIPIENT_NAME: string | null;
+  RECIPIENT_TEL: string | null;
+  RECIPIENT_ADDRESS: string | null;
+  RECIPIENT_SUBDISTRICT: string | null;
+  RECIPIENT_DISTRICT: string | null;
+  RECIPIENT_PROVINCE: string | null;
+  RECIPIENT_ZIPCODE: string | null;
+  SERIAL_NO: string | null;
+  user_id: number;
+  create_date: string | null;
+  create_time: string | null;
+  warehouse_name: string | null;
+  type: string | null;
+  customer_input: "Y" | "N" | null;
+  warehouse_accept: "Y" | "N" | null;
+  dc_accept: "Y" | "N" | null;
+  image: "Y" | "N" | null;
+  sign: "Y" | "N" | null;
+  warehouse_id: number | null;
+};
+
+const API_ENDPOINT = "https://xsendwork.com/api/bills-data";
+
+export default function BillReport() {
+  const { user } = useAuth();
+
+  const [rows, setRows] = useState<BillReportRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [searchSerial, setSearchSerial] = useState("");
+  const [searchReference, setSearchReference] = useState("");
+
+  const headers = [
+    "ลำดับ",
+    "SERIAL_NO",
+    "REFERENCE",
+    "ชื่อลูกค้า",
+    "ผู้รับ",
+    "ที่อยู่ผู้รับ",
+    "ปลายทาง",
+    // "วันที่สร้าง",
+    "ประเภท",
+    "สถานะ",
+  ];
+
+  // ------------------------------------------
+  // Helper
+  // ------------------------------------------
+  const renderStatusBadge = (value: "Y" | "N" | null, label: string) => {
+    if (!value) return null;
+    const isYes = value === "Y";
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-[2px] text-[10px] font-semibold ${
+          isYes
+            ? "bg-green-100 text-green-700 border border-green-300"
+            : "bg-red-100 text-red-700 border border-red-300"
+        }`}
+      >
+        {label}: {isYes ? "Y" : "N"}
+      </span>
+    );
+  };
+
+//   const formatDateTime = (dateStr: string | null, timeStr: string | null) => {
+//     if (!dateStr && !timeStr) return "-";
+//     try {
+//       const d = dateStr ? new Date(dateStr) : null;
+//       const dateText = d
+//         ? d.toLocaleDateString("th-TH", {
+//             year: "numeric",
+//             month: "2-digit",
+//             day: "2-digit",
+//           })
+//         : "";
+//       const timeText = timeStr || "";
+//       return `${dateText} ${timeText}`.trim() || "-";
+//     } catch {
+//       return "-";
+//     }
+//   };
+
+  const buildFullAddress = (r: BillReportRow) => {
+    const parts = [
+      r.RECIPIENT_ADDRESS || "",
+      r.RECIPIENT_SUBDISTRICT ? `ต.${r.RECIPIENT_SUBDISTRICT}` : "",
+      r.RECIPIENT_DISTRICT ? `อ.${r.RECIPIENT_DISTRICT}` : "",
+      r.RECIPIENT_PROVINCE ? `จ.${r.RECIPIENT_PROVINCE}` : "",
+      r.RECIPIENT_ZIPCODE || "",
+    ].filter(Boolean);
+    return parts.join(" ");
+  };
+
+  const truncateText = (text: string, maxLength = 80) => {
+    if (!text) return "-";
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  };
+
+  // ------------------------------------------
+  // ดึงข้อมูล (รองรับค่าค้นหาที่ส่งเข้ามา)
+  // ------------------------------------------
+  const fetchData = async (customSerial?: string, customReference?: string) => {
+    if (!user?.user_id) return;
+
+    const serial = customSerial ?? searchSerial;
+    const reference = customReference ?? searchReference;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await axios.get(API_ENDPOINT, {
+        params: {
+          user_id: user.user_id,
+          SERIAL_NO: serial && serial.length >= 3 ? serial : undefined,
+          REFERENCE: reference && reference.length >= 3 ? reference : undefined,
+        },
+      });
+
+      if (res.data?.success) {
+        setRows(res.data.data || []);
+      } else {
+        setError(res.data?.message || "ดึงข้อมูลไม่สำเร็จ");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("เกิดข้อผิดพลาดในการดึงข้อมูล");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.user_id) {
+      fetchData("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.user_id]);
+
+  // ------------------------------------------
+  // UI
+  // ------------------------------------------
+  return (
+    <div className="font-thai w-full p-4 bg-gray-100">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold">รายงานรายการบิล (Bill Report)</h2>
+
+        <div className="flex flex-col items-end text-sm text-gray-600">
+          <span>ผู้ใช้: {user?.first_name || user?.username || "-"}</span>
+          <span>จำนวนรายการ: {rows.length.toLocaleString("th-TH")}</span>
+        </div>
+      </div>
+
+      {/* Search Panel */}
+      <div className="mb-4 bg-white border border-gray-300 rounded shadow-sm p-3 flex flex-wrap gap-4 items-end">
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-700 mb-1">ค้นหา SERIAL_NO</label>
+          <input
+            type="text"
+            value={searchSerial}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchSerial(value);
+
+              if (value.length === 0) {
+                // ลบหมด → โหลดทั้งหมด
+                fetchData("", searchReference);
+              } else if (value.length >= 3) {
+                // พิมพ์ครบ 3 ตัวขึ้นไป → ค้น
+                fetchData(value, searchReference);
+              }
+              // ถ้า 1–2 ตัว → ยังไม่ยิง API
+            }}
+            className="border border-gray-300 rounded px-2 py-1 text-sm min-w-[220px]"
+            placeholder="อย่างน้อย 3 ตัว เช่น BX2..."
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-700 mb-1">ค้นหา REFERENCE</label>
+          <input
+            type="text"
+            value={searchReference}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchReference(value);
+
+              if (value.length === 0) {
+                fetchData(searchSerial, "");
+              } else if (value.length >= 3) {
+                fetchData(searchSerial, value);
+              }
+            }}
+            className="border border-gray-300 rounded px-2 py-1 text-sm min-w-[220px]"
+            placeholder="อย่างน้อย 3 ตัว เช่น TR6..."
+          />
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-3 text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-center text-gray-600 mt-4">กำลังโหลดข้อมูล...</div>
+      )}
+
+      {/* Table */}
+      {!loading && rows.length === 0 && !error && (
+        <div className="text-center text-gray-500 mt-4">
+          ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา
+        </div>
+      )}
+
+      {!loading && rows.length > 0 && (
+        <div className="border border-gray-300 rounded bg-white shadow-sm">
+          {/* เลื่อนทั้งแนวนอน + แนวตั้ง ใน div เดียว */}
+          <div className="max-h-[75vh] overflow-auto">
+            <table className="border-collapse min-w-max">
+              <ResizableColumns headers={headers} pageKey="bill-report" />
+              <tbody>
+                {rows.map((r, idx) => (
+                  <tr
+                    key={r.id}
+                    className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    {/* ลำดับ */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-center text-sm bg-gray-100 font-semibold">
+                      {idx + 1}
+                    </td>
+
+                    {/* SERIAL_NO */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
+                      {r.SERIAL_NO || "-"}
+                    </td>
+
+                    {/* REFERENCE */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
+                      {r.REFERENCE || "-"}
+                    </td>
+
+                    {/* CUSTOMER_NAME */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
+                      {r.CUSTOMER_NAME || "-"}
+                    </td>
+
+                    {/* ผู้รับ */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-[11px] leading-snug truncate max-w-[100px]">
+                      {truncateText(
+                        `${r.RECIPIENT_NAME || "-"}${
+                          r.RECIPIENT_TEL ? ` (${r.RECIPIENT_TEL})` : ""
+                        }`,
+                        100
+                      )}
+                    </td>
+
+                    {/* ที่อยู่ผู้รับ */}
+                    <td
+                      className="px-2 py-1 border-b border-gray-300 text-[11px] leading-snug max-w-[200px] truncate"
+                      title={buildFullAddress(r)}
+                    >
+                      {truncateText(buildFullAddress(r), 255)}
+                    </td>
+
+                    {/* ปลายทาง */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-[11px] leading-snug">
+                      {r.warehouse_name || "-"}
+                    </td>
+
+                    {/* วันที่สร้าง */}
+                    {/* <td className="px-2 py-1 border-b border-gray-300 text-[11px] text-center">
+                      {formatDateTime(r.create_date, r.create_time)}
+                    </td> */}
+
+                    {/* Type */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-xs text-center">
+                      <span className="inline-flex items-center rounded-full px-2 py-[2px] bg-gray-100 border border-gray-300">
+                        {r.type || "-"}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-2 py-1 border-b border-gray-300 text-[10px]">
+                      <div className="flex flex-wrap gap-1">
+                        {renderStatusBadge(r.customer_input, "ลูกค้าสร้าง")}
+                        {renderStatusBadge(r.warehouse_accept, "คลังรับเข้า")}
+                        {renderStatusBadge(r.dc_accept, "DC รับเข้า")}
+                        {renderStatusBadge(r.image, "รูปภาพ")}
+                        {renderStatusBadge(r.sign, "ลายเซ็น")}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -27,6 +27,7 @@ type ImportRow = {
 const headers = [
   "ลำดับ",
   "NO_BILL",
+  "SERIAL_NO",
   "REFERENCE",
   "SEND_DATE",
   "CUSTOMER_NAME",
@@ -38,7 +39,6 @@ const headers = [
   "RECIPIENT_DISTRICT",
   "RECIPIENT_PROVINCE",
   "RECIPIENT_ZIPCODE",
-  "SERIAL_NO",
 ];
 
 export default function BillImport() {
@@ -248,6 +248,16 @@ export default function BillImport() {
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.NO_BILL || "-"}
                   </td>
+                  <td
+                    className={
+                      "px-3 py-1 border-b text-sm truncate " +
+                      (duplicates[row.SERIAL_NO] > 1
+                        ? "text-red-500 font-bold"
+                        : "")
+                    }
+                  >
+                    {row.SERIAL_NO || "-"}
+                  </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.REFERENCE || "-"}
                   </td>
@@ -285,16 +295,6 @@ export default function BillImport() {
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.RECIPIENT_ZIPCODE || "-"}
-                  </td>
-                  <td
-                    className={
-                      "px-3 py-1 border-b text-sm truncate " +
-                      (duplicates[row.SERIAL_NO] > 1
-                        ? "text-red-500 font-bold"
-                        : "")
-                    }
-                  >
-                    {row.SERIAL_NO || "-"}
                   </td>
                 </tr>
               ))}

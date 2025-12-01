@@ -40,9 +40,9 @@ type ZipAddressRow = {
 const headers = [
   "ลำดับ",
   "จัดการ",
-  "NO_BILL",
+  "SERIAL_NO",
   "REFERENCE",
-  "SEND_DATE",
+  "CREATE_DATE",
   "รหัสผู้ส่ง",
   "รหัสผู้รับ",
   "ชื่อผู้รับ",
@@ -52,7 +52,6 @@ const headers = [
   "อำเภอ",
   "จังหวัด",
   "รหัสไปรษณีย์",
-  "SERIAL_NO",
 ];
 
 const emptyRow: ImportRow = {
@@ -72,7 +71,6 @@ const emptyRow: ImportRow = {
 };
 
 const requiredFields: (keyof ImportRow)[] = [
-  "NO_BILL",
   "REFERENCE",
   "SEND_DATE",
   "CUSTOMER_NAME",
@@ -293,15 +291,6 @@ export default function BillManual() {
           className="grid grid-cols-1 md:grid-cols-6 gap-3"
         >
           <div>
-            <label className="block text-sm font-medium mb-1">NO_BILL</label>
-            <input
-              type="text"
-              value={formRow.NO_BILL}
-              onChange={(e) => handleChangeField("NO_BILL", e.target.value)}
-              className="w-full border rounded px-2 py-1 text-sm"
-            />
-          </div>
-          <div>
             <label className="block text-sm font-medium mb-1">REFERENCE</label>
             <input
               type="text"
@@ -311,7 +300,9 @@ export default function BillManual() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">SEND_DATE</label>
+            <label className="block text-sm font-medium mb-1">
+              CREATE_DATE
+            </label>
             <DatePicker
               selected={formRow.SEND_DATE ? new Date(formRow.SEND_DATE) : null}
               onChange={(date: Date | null) => {
@@ -597,8 +588,15 @@ export default function BillManual() {
                       ลบ
                     </button>
                   </td>
-                  <td className="px-3 py-1 border-b text-sm truncate">
-                    {row.NO_BILL || "-"}
+                  <td
+                    className={
+                      "px-3 py-1 border-b text-sm truncate " +
+                      (row.SERIAL_NO && duplicates[row.SERIAL_NO] > 1
+                        ? "text-red-500 font-bold"
+                        : "")
+                    }
+                  >
+                    {row.SERIAL_NO || "-"}
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.REFERENCE || "-"}
@@ -634,16 +632,6 @@ export default function BillManual() {
                   </td>
                   <td className="px-3 py-1 border-b text-sm truncate">
                     {row.RECIPIENT_ZIPCODE || "-"}
-                  </td>
-                  <td
-                    className={
-                      "px-3 py-1 border-b text-sm truncate " +
-                      (row.SERIAL_NO && duplicates[row.SERIAL_NO] > 1
-                        ? "text-red-500 font-bold"
-                        : "")
-                    }
-                  >
-                    {row.SERIAL_NO || "-"}
                   </td>
                 </tr>
               ))}
