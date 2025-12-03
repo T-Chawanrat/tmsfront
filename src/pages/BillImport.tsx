@@ -11,7 +11,7 @@ import { useAuth } from "../context/AuthContext";
 type ImportRow = {
   NO_BILL: string;
   REFERENCE: string;
-  SEND_DATE: string; // เก็บเป็น string ตรง ๆ จาก excel
+  SEND_DATE: string;
   CUSTOMER_NAME: string;
   RECIPIENT_CODE: string;
   RECIPIENT_NAME: string;
@@ -26,6 +26,7 @@ type ImportRow = {
 
 const headers = [
   "ลำดับ",
+  "จัดการ",
   "NO_BILL",
   "SERIAL_NO",
   "REFERENCE",
@@ -84,7 +85,6 @@ export default function BillImport() {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
-        // แปลง Sheet → JSON ตาม header ใน Excel
         const json: ImportRow[] = XLSX.utils.sheet_to_json(worksheet, {
           defval: "",
         }) as ImportRow[];
@@ -118,7 +118,6 @@ export default function BillImport() {
     setSuccess(null);
 
     try {
-      // สมมติ backend ทำ endpoint /import-bills (คุณไปเขียน controller รับ array นี้ได้เลย)
       const res = await axios.post("https://xsendwork.com/api/import-bills", {
         rows,
         user_id: user?.user_id,
@@ -156,7 +155,17 @@ export default function BillImport() {
       count[r.SERIAL_NO] = (count[r.SERIAL_NO] || 0) + 1;
     });
 
-    return count; // key = serial, value = count
+    return count;
+  };
+
+  const handleDeleteRow = (index: number) => {
+    setRows((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      setDuplicates(findDuplicates(next));
+      return next;
+    });
+    setError(null);
+    setSuccess(null);
   };
 
   const excelDateToJSDate = (serial: number): Date | null => {
@@ -172,7 +181,6 @@ export default function BillImport() {
     >
       <h2 className="text-xl font-bold mb-4">นำเข้า Excel (Bills)</h2>
 
-      {/* ส่วนอัปโหลดไฟล์ */}
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
         <label className="inline-flex items-center">
           <span className="mr-2 font-medium">เลือกไฟล์ Excel:</span>
@@ -187,7 +195,6 @@ export default function BillImport() {
           <span className="text-sm text-gray-600">ไฟล์: {fileName}</span>
         )}
 
-        {/* ปุ่มบันทึก */}
         <div className="mb-4 flex gap-2 justify-end flex-grow">
           {rows.length > 0 && (
             <span className="text-sm mt-2 text-gray-600">
@@ -209,7 +216,6 @@ export default function BillImport() {
         </div>
       </div>
 
-      {/* แสดง error / success */}
       {error && (
         <div className="mb-4 text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded">
           {error}
@@ -221,9 +227,6 @@ export default function BillImport() {
         </div>
       )}
 
-      {/* Preview Table */}
-      {/* <div className="overflow-x-auto w-full border border-gray-300 rounded"> */}
-
       <div className="overflow-x-auto overflow-y-auto max-h-[80vh] w-full border border-gray-300 rounded">
         {!rows.length && !loading && (
           <div className="p-4 text-center text-gray-500">
@@ -232,8 +235,15 @@ export default function BillImport() {
         )}
 
         {rows.length > 0 && (
-          <table className="w-full table-fixed border-collapse">
-            <ResizableColumns headers={headers} pageKey="bill-import" />
+          <table className="w-sm table-fixed border-collapse">
+            <ResizableColumns
+              headers={headers}
+              pageKey="bill-import"
+              minWidths={{
+                0: 60, 
+                1: 60, 
+              }}
+            />
             <thead className="bg-gray-100"></thead>
             <tbody>
               {rows.map((row, idx) => (
@@ -243,6 +253,16 @@ export default function BillImport() {
                 >
                   <td className="px-3 py-1 border-b text-sm bg-gray-100 font-semibold text-center sticky left-0 z-10">
                     {idx + 1}
+                  </td>
+
+                  <td className="px-3 py-1 border-b text-center text-sm whitespace-nowrap min-w-[120px]">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRow(idx)}
+                      className="px-2 py-1 text-xs bg-red-500 text-white rounded"
+                    >
+                      ลบ
+                    </button>
                   </td>
 
                   <td className="px-3 py-1 border-b text-sm truncate">

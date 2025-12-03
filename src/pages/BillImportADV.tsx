@@ -18,6 +18,7 @@ type ImportRow = {
 
 const headers = [
   "ลําดับ",
+  "จัดการ",
   "dpe_bill_no",
   "box_sn",
   "cusname",
@@ -153,6 +154,16 @@ export default function BillImportADV() {
     return count;
   };
 
+  const handleDeleteRow = (index: number) => {
+    setRows((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      setDuplicates(findDuplicates(next));
+      return next;
+    });
+    setError(null);
+    setSuccess(null);
+  };
+
   return (
     <div
       className={`font-thai w-full p-4 ${
@@ -219,8 +230,15 @@ export default function BillImportADV() {
         )}
 
         {rows.length > 0 && (
-          <table className="w-full table-fixed border-collapse">
-            <ResizableColumns headers={headers} pageKey="import-adv" />
+          <table className="w-sm table-fixed border-collapse">
+            <ResizableColumns
+              headers={headers}
+              pageKey="import-adv"
+              minWidths={{
+                0: 60,
+                1: 40,
+              }}
+            />
             <thead className="bg-gray-100"></thead>
             <tbody>
               {rows.map((row, idx) => (
@@ -231,6 +249,16 @@ export default function BillImportADV() {
                   {/* ลำดับ */}
                   <td className="px-3 py-1 border-b text-sm bg-gray-100 font-semibold text-center sticky left-0 z-10">
                     {idx + 1}
+                  </td>
+
+                  <td className="px-3 py-1 border-b text-center text-sm whitespace-nowrap min-w-[120px]">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRow(idx)}
+                      className="px-2 py-1 text-xs bg-red-500 text-white rounded"
+                    >
+                      ลบ
+                    </button>
                   </td>
 
                   <td className="px-3 py-1 border-b text-sm truncate">

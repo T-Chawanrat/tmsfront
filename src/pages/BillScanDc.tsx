@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import successSound from "../../assets/sounds/success.mp3";
+import errorSound from "../../assets/sounds/error.mp3";
 
 type BillRow = {
   id: number;
@@ -20,6 +22,8 @@ export default function BillScanDc() {
   const [info, setInfo] = useState<string | null>(null);
   const typingTimer = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const successSoundRef = useRef<HTMLAudioElement | null>(null);
+  const errorSoundRef = useRef<HTMLAudioElement | null>(null);
   const { user } = useAuth();
 
   const fetchPendingBills = async () => {
@@ -78,10 +82,12 @@ export default function BillScanDc() {
       );
 
       if (alreadyIndex !== -1) {
-        setError(`SERIAL_NO ${serial} ถูกยิงไปแล้ว`);
+        setError(`SN : ${serial} ถูกยิงไปแล้ว`);
       } else {
         setError(`ไม่พบ SERIAL_NO ${serial}`);
       }
+
+      errorSoundRef.current?.play();
 
       setSerialInput("");
       return;
@@ -92,7 +98,8 @@ export default function BillScanDc() {
     setPendingRows((prev) => prev.filter((_, i) => i !== index));
     setScannedRows((prev) => [row, ...prev]);
 
-    setInfo(`ย้าย ${serial} สำเร็จ`);
+    setInfo(`ยิง SN : ${serial} สำเร็จ`);
+    successSoundRef.current?.play();
     setSerialInput("");
 
     // โฟกัสช่องยิงต่อ
@@ -133,6 +140,8 @@ export default function BillScanDc() {
 
   return (
     <div className="font-thai w-full p-4">
+      <audio ref={successSoundRef} src={successSound} preload="auto" />
+      <audio ref={errorSoundRef} src={errorSound} preload="auto" />
       <h2 className="text-xl font-bold mb-4">ยิงเทียบพัสดุ (คลัง DC)</h2>
 
       {/* ส่วนช่องยิงบาร์โค้ด */}
@@ -242,7 +251,7 @@ export default function BillScanDc() {
                       <td className="px-2 py-1 border-b text-center">
                         {idx + 1}
                       </td>
-                      <td className="px-2 py-1 border-b font-semibold text-lg bg-red-500">
+                      <td className="px-2 py-1 border-b font-semibold text-white text-lg bg-red-500">
                         {row.SERIAL_NO}
                       </td>
                       <td className="px-2 py-1 border-b truncate">

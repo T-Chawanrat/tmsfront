@@ -106,17 +106,14 @@ export default function BillManual() {
     }));
   };
 
-  // พิมพ์ในช่องตำบล/อำเภอ/จังหวัด/รหัสไปรษณีย์ ช่องไหนก็ได้
   const handleAddressInputChange = async (
     field: keyof ImportRow,
     value: string
   ) => {
-    // อัปเดตค่าฟอร์มตามปกติ
     handleChangeField(field, value);
 
     const keyword = value.trim();
 
-    // ถ้าน้อยกว่า 2 ตัว ไม่ต้องค้น
     if (!keyword || keyword.length < 2) {
       setAddressOptions([]);
       return;
@@ -139,14 +136,12 @@ export default function BillManual() {
     }
   };
 
-  // เวลาเลือกจากลิสต์ autocomplete → เติมครบ 4 ช่อง
   const handleSelectAddress = (row: ZipAddressRow) => {
     handleChangeField("RECIPIENT_SUBDISTRICT", row.tambon_name_th);
     handleChangeField("RECIPIENT_DISTRICT", row.ampur_name_th);
     handleChangeField("RECIPIENT_PROVINCE", row.province_name_th);
     handleChangeField("RECIPIENT_ZIPCODE", row.zip_code);
 
-    // ปิด dropdown
     setAddressOptions([]);
   };
 
@@ -269,7 +264,6 @@ export default function BillManual() {
       if (!dropdownRef.current) return;
 
       if (!dropdownRef.current.contains(event.target as Node)) {
-        // คลิกนอกบริเวณ 4 ช่อง + dropdown → ปิด
         setAddressOptions([]);
         setActiveField(null);
       }
@@ -551,7 +545,14 @@ export default function BillManual() {
 
         {rows.length > 0 && (
           <table className="w-full table-fixed border-collapse">
-            <ResizableColumns headers={headers} pageKey="bill-manual" />
+            <ResizableColumns
+              headers={headers}
+              pageKey="bill-manual"
+              minWidths={{
+                0: 60,
+                1: 150,
+              }}
+            />
             <thead className="bg-gray-100" />
             <tbody>
               {rows.map((row, idx) => (
@@ -567,7 +568,7 @@ export default function BillManual() {
                     <button
                       type="button"
                       onClick={() => handleEditRow(idx)}
-                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded mr-2"
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded mr-1"
                     >
                       แก้ไข
                     </button>
@@ -575,7 +576,7 @@ export default function BillManual() {
                     <button
                       type="button"
                       onClick={() => handleCopyRow(idx)}
-                      className="px-2 py-1 text-xs bg-yellow-500 text-white rounded mr-2"
+                      className="px-2 py-1 text-xs bg-yellow-500 text-white rounded mr-1"
                     >
                       คัดลอก
                     </button>

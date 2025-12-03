@@ -26,6 +26,7 @@ type ImportRow = {
 
 const headers = [
   "ลำดับ",
+  "จัดการ",
   "เลขที่บาร์โค้ด",
   "เลขที่บิล",
   "รหัสอ้างอิง",
@@ -79,7 +80,6 @@ export default function BillImportVGT() {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
-        // แปลง Sheet → JSON ตาม header ใน Excel
         const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(
           worksheet,
           {
@@ -87,7 +87,6 @@ export default function BillImportVGT() {
           }
         );
 
-        // 2) map ไทย → ImportRow (key ภาษาอังกฤษที่เราใช้ในระบบ)
         const mapped: ImportRow[] = rawRows.map((r) => ({
           NO_BILL: null,
           SEND_DATE: null,
@@ -174,7 +173,17 @@ export default function BillImportVGT() {
       count[r.SERIAL_NO] = (count[r.SERIAL_NO] || 0) + 1;
     });
 
-    return count; // key = serial, value = count
+    return count;
+  };
+
+  const handleDeleteRow = (index: number) => {
+    setRows((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      setDuplicates(findDuplicates(next));
+      return next;
+    });
+    setError(null);
+    setSuccess(null);
   };
 
   return (
@@ -234,9 +243,6 @@ export default function BillImportVGT() {
         </div>
       )}
 
-      {/* Preview Table */}
-      {/* <div className="overflow-x-auto w-full border border-gray-300 rounded"> */}
-
       <div className="overflow-x-auto overflow-y-auto max-h-[80vh] w-full border border-gray-300 rounded">
         {!rows.length && !loading && (
           <div className="p-4 text-center text-gray-500">
@@ -245,8 +251,15 @@ export default function BillImportVGT() {
         )}
 
         {rows.length > 0 && (
-          <table className="w-full table-fixed border-collapse">
-            <ResizableColumns headers={headers} pageKey="import-vgt" />
+          <table className="w-sm table-fixed border-collapse">
+            <ResizableColumns
+              headers={headers}
+              pageKey="import-vgt"
+              minWidths={{
+                0: 60,
+                1: 40,
+              }}
+            />
             <thead className="bg-gray-100"></thead>
             <tbody>
               {rows.map((row, idx) => (
@@ -256,6 +269,16 @@ export default function BillImportVGT() {
                 >
                   <td className="px-3 py-1 border-b text-sm bg-gray-100 font-semibold text-center sticky left-0 z-10">
                     {idx + 1}
+                  </td>
+
+                  <td className="px-3 py-1 border-b text-center text-sm whitespace-nowrap min-w-[120px]">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRow(idx)}
+                      className="px-2 py-1 text-xs bg-red-500 text-white rounded"
+                    >
+                      ลบ
+                    </button>
                   </td>
 
                   <td

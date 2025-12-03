@@ -380,23 +380,23 @@ export default function BillReport() {
     );
   };
 
-//   const formatDateTime = (dateStr: string | null, timeStr: string | null) => {
-//     if (!dateStr && !timeStr) return "-";
-//     try {
-//       const d = dateStr ? new Date(dateStr) : null;
-//       const dateText = d
-//         ? d.toLocaleDateString("th-TH", {
-//             year: "numeric",
-//             month: "2-digit",
-//             day: "2-digit",
-//           })
-//         : "";
-//       const timeText = timeStr || "";
-//       return `${dateText} ${timeText}`.trim() || "-";
-//     } catch {
-//       return "-";
-//     }
-//   };
+  //   const formatDateTime = (dateStr: string | null, timeStr: string | null) => {
+  //     if (!dateStr && !timeStr) return "-";
+  //     try {
+  //       const d = dateStr ? new Date(dateStr) : null;
+  //       const dateText = d
+  //         ? d.toLocaleDateString("th-TH", {
+  //             year: "numeric",
+  //             month: "2-digit",
+  //             day: "2-digit",
+  //           })
+  //         : "";
+  //       const timeText = timeStr || "";
+  //       return `${dateText} ${timeText}`.trim() || "-";
+  //     } catch {
+  //       return "-";
+  //     }
+  //   };
 
   const buildFullAddress = (r: BillReportRow) => {
     const parts = [
@@ -568,7 +568,7 @@ export default function BillReport() {
                     </td>
 
                     {/* ผู้รับ */}
-                    <td className="px-2 py-1 border-b border-gray-300 text-[11px] leading-snug truncate max-w-[100px]">
+                    <td className="px-2 py-1 border-b border-gray-300  leading-snug truncate max-w-[100px]">
                       {truncateText(
                         `${r.RECIPIENT_NAME || "-"}${
                           r.RECIPIENT_TEL ? ` (${r.RECIPIENT_TEL})` : ""
@@ -586,7 +586,7 @@ export default function BillReport() {
                     </td>
 
                     {/* ปลายทาง */}
-                    <td className="px-2 py-1 border-b border-gray-300 text-[11px] leading-snug">
+                    <td className="px-2 py-1 border-b border-gray-300 leading-snug">
                       {r.warehouse_name || "-"}
                     </td>
 
@@ -605,7 +605,7 @@ export default function BillReport() {
                     {/* Status */}
                     <td className="px-2 py-1 border-b border-gray-300 text-[10px]">
                       <div className="flex flex-wrap gap-1">
-                        {renderStatusBadge(r.customer_input, "ลูกค้าสร้าง")}
+                        {renderStatusBadge(r.customer_input, "นำเข้าบิล")}
                         {renderStatusBadge(r.warehouse_accept, "คลังรับเข้า")}
                         {renderStatusBadge(r.dc_accept, "DC รับเข้า")}
                         {renderStatusBadge(r.image, "รูปภาพ")}
