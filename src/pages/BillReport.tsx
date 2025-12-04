@@ -334,6 +334,8 @@ type BillReportRow = {
   image: "Y" | "N" | null;
   sign: "Y" | "N" | null;
   warehouse_id: number | null;
+  bill_sign: string | null;
+  bill_image_urls: string[] | null;
 };
 
 const API_ENDPOINT = "https://xsendwork.com/api/bills-data";
@@ -344,9 +346,12 @@ export default function BillReport() {
   const [rows, setRows] = useState<BillReportRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [searchSerial, setSearchSerial] = useState("");
   const [searchReference, setSearchReference] = useState("");
+  const [modalSerialNo, setModalSerialNo] = useState<string | null>(null);
+  const [modalReference, setModalReference] = useState<string | null>(null);
+  const [modalSignUrl, setModalSignUrl] = useState<string | null>(null);
+  const [modalImages, setModalImages] = useState<string[]>([]);
 
   const headers = [
     "ลำดับ",
@@ -359,6 +364,8 @@ export default function BillReport() {
     // "วันที่สร้าง",
     "ประเภท",
     "สถานะ",
+    "ลายเซ็น",
+    "รูปภาพ",
   ];
 
   // ------------------------------------------
@@ -446,6 +453,29 @@ export default function BillReport() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openImageModal = (r: any) => {
+    const signUrl = r.bill_sign ? `https://xsendwork.com/${r.bill_sign}` : null;
+
+    const images = Array.isArray(r.bill_image_urls)
+      ? r.bill_image_urls.map((p: string) => `https://xsendwork.com/${p}`)
+      : [];
+
+    // ถ้าไม่มีทั้ง sign และรูป จะไม่เปิด modal
+    if (!signUrl && images.length === 0) return;
+
+    setModalSerialNo(r.SERIAL_NO || null);
+    setModalReference(r.REFERENCE || null);
+    setModalSignUrl(signUrl);
+    setModalImages(images);
+  };
+
+  const closeImageModal = () => {
+    setModalSerialNo(null);
+    setModalReference(null);
+    setModalSignUrl(null);
+    setModalImages([]);
   };
 
   useEffect(() => {
@@ -540,7 +570,14 @@ export default function BillReport() {
           {/* เลื่อนทั้งแนวนอน + แนวตั้ง ใน div เดียว */}
           <div className="max-h-[75vh] overflow-auto">
             <table className="border-collapse min-w-max">
-              <ResizableColumns headers={headers} pageKey="bill-report" />
+              <ResizableColumns
+                headers={headers}
+                pageKey="bill-report"
+                minWidths={{
+                  9: 80,
+                  10: 350,
+                }}
+              />
               <tbody>
                 {rows.map((r, idx) => (
                   <tr
@@ -553,8 +590,14 @@ export default function BillReport() {
                     </td>
 
                     {/* SERIAL_NO */}
-                    <td className="px-2 py-1 border-b border-gray-300 text-sm truncate">
-                      {r.SERIAL_NO || "-"}
+                    <td
+                      onClick={() => openImageModal(r)}
+                      className="
+                      px-2 py-1 border-b border-gray-300 text-sm truncate
+                      font-medium cursor-pointer
+                     hover:text-gray-400"
+                    >
+                      🔍 {r.SERIAL_NO || "-"}
                     </td>
 
                     {/* REFERENCE */}
@@ -612,10 +655,111 @@ export default function BillReport() {
                         {renderStatusBadge(r.sign, "ลายเซ็น")}
                       </div>
                     </td>
+                    <td className="px-2 py-1 border-b border-gray-300 text-center">
+                      {r.bill_sign ? (
+                        <img
+                          src={`https://xsendwork.com/${r.bill_sign}`}
+                          className="h-10 mx-auto rounded border cursor-pointer"
+                          onClick={() =>
+                            window.open(
+                              `https://xsendwork.com/${r.bill_sign}`,
+                              "_blank"
+                            )
+                          }
+                          alt=""
+                        />
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-2 py-1 border-b border-gray-300 text-center">
+                      {r.bill_image_urls && r.bill_image_urls.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {r.bill_image_urls.map((img, i) => (
+                            <img
+                              key={i}
+                              src={`https://xsendwork.com/${img}`}
+                              className="h-10 w-10 object-cover rounded border cursor-pointer"
+                              onClick={() =>
+                                window.open(
+                                  `https://xsendwork.com/${img}`,
+                                  "_blank"
+                                )
+                              }
+                              alt=""
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {/* Modal แสดงรูป */}
+            {(modalSignUrl || modalImages.length > 0) && (
+              <div
+               className="fixed inset-0 z-100000 flex items-center justify-center bg-white/30 backdrop-blur-sm"
+                onClick={closeImageModal} // คลิกพื้นหลัง ปิด modal
+              >
+                <div
+                  className="bg-white rounded-lg max-w-3xl w-full mx-4 p-4"
+                  onClick={(e) => e.stopPropagation()} // กันคลิกในกล่องไม่ให้ปิด
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="text-sm font-semibold flex gap-10">
+                      <div>SN: {modalSerialNo || "-"}</div>
+                      <div>REF: {modalReference || "-"}</div>
+                    </div>
+
+                    <button
+                      className="text-gray-500 hover:text-black text-lg"
+                      onClick={closeImageModal}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* === ลายเซ็น === */}
+                  {modalSignUrl && (
+                    <div className="mb-4">
+                      <div className="text-xs font-bold text-gray-700 mb-1">
+                        ลายเซ็น
+                      </div>
+                      <img
+                        src={modalSignUrl}
+                        className="w-40 h-auto rounded border cursor-pointer"
+                        onClick={() => window.open(modalSignUrl, "_blank")}
+                        alt="signature"
+                      />
+                    </div>
+                  )}
+
+                  {/* === รูปภาพจาก bill_image_urls === */}
+                  {modalImages.length > 0 && (
+                    <>
+                      <div className="text-xs font-bold text-gray-700 mb-1">
+                        รูปถ่าย
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 max-h-[70vh] overflow-auto">
+                        {modalImages.map((url, i) => (
+                          <img
+                            key={i}
+                            src={url}
+                            className="w-full h-32 object-cover rounded border cursor-pointer"
+                            onClick={() => window.open(url, "_blank")}
+                            alt=""
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
