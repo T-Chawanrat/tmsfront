@@ -543,7 +543,7 @@
 //                         }
 //                       }}
 //                       disabled={!modalBillId}
-//                       className={`px-3 py-1 text-sm rounded 
+//                       className={`px-3 py-1 text-sm rounded
 //                       ${
 //                         modalBillId
 //                           ? "bg-green-600 text-white hover:bg-green-700"
@@ -562,7 +562,6 @@
 //     </div>
 //   );
 // }
-
 
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -710,8 +709,7 @@ export default function BillReport() {
         params: {
           user_id: user.user_id,
           SERIAL_NO: serial && serial.length >= 3 ? serial : undefined,
-          REFERENCE:
-            reference && reference.length >= 3 ? reference : undefined,
+          REFERENCE: reference && reference.length >= 3 ? reference : undefined,
         },
       });
 
@@ -796,13 +794,54 @@ export default function BillReport() {
   // -----------------------------
   // เลือกรูปใหม่เพิ่ม
   // -----------------------------
-  const handleNewImagesChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  // -----------------------------
+  // เลือกรูปใหม่เพิ่ม (ดักไม่เกิน 8 รูปรวม)
+  // -----------------------------
+  const handleNewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const arr = Array.from(files);
-    setNewImages(arr);
+
+    const selected = Array.from(files);
+
+    const MAX_IMAGES = 8;
+
+    // จำนวนรูปที่ "มีอยู่จริง" หลังจากลบ (ถ้าผู้ใช้ติ๊กเอาไว้)
+    const currentExisting = modalImages.length - imagesToDelete.length;
+
+    // จำนวนรูปใหม่ที่กำลังจะมีอยู่แล้ว (ก่อนรอบนี้)
+    const alreadyNew = newImages.length;
+
+    // จำนวนช่องว่างที่ยังเหลือให้เพิ่ม
+    const remainingSlots = MAX_IMAGES - currentExisting - alreadyNew;
+
+    if (remainingSlots <= 0) {
+      setImageEditError(
+        `ไม่สามารถเพิ่มรูปได้เกิน ${MAX_IMAGES} รูป กรุณาลบรูปเก่าออกก่อน`
+      );
+      // เคลียร์ input ด้วยกัน user เลือกไฟล์เดิมซ้ำแล้วไม่มีอะไรเกิดขึ้น
+      e.target.value = "";
+      return;
+    }
+
+    const useFiles = selected.slice(0, remainingSlots);
+
+    if (useFiles.length < selected.length) {
+      setImageEditError(
+        `เพิ่มได้อีกสูงสุด ${remainingSlots} รูป ส่วนที่เกินจะไม่ถูกเพิ่ม`
+      );
+    } else {
+      setImageEditError(null);
+    }
+
+    setNewImages((prev) => [...prev, ...useFiles]);
+
+    // เคลียร์ค่า input เพื่อให้เลือกไฟล์ชุดเดิมซ้ำได้ถ้าต้องการ
+    e.target.value = "";
+  };
+
+  // ลบรูปใหม่ออกจาก list (จาก index)
+  const removeNewImage = (index: number) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   // -----------------------------
@@ -823,10 +862,7 @@ export default function BillReport() {
         const relativePaths = imagesToDelete.map((fullUrl) =>
           fullUrl.replace(`${BASE_URL}/`, "")
         );
-        formData.append(
-          "deleteImageUrls",
-          JSON.stringify(relativePaths)
-        );
+        formData.append("deleteImageUrls", JSON.stringify(relativePaths));
       }
 
       // เพิ่มรูปใหม่
@@ -934,9 +970,7 @@ export default function BillReport() {
 
       {/* Loading */}
       {loading && (
-        <div className="text-center text-gray-600 mt-4">
-          กำลังโหลดข้อมูล...
-        </div>
+        <div className="text-center text-gray-600 mt-4">กำลังโหลดข้อมูล...</div>
       )}
 
       {/* Table */}
@@ -1038,10 +1072,7 @@ export default function BillReport() {
                           src={`${BASE_URL}/${r.bill_sign}`}
                           className="h-8 mx-auto rounded border cursor-pointer"
                           onClick={() =>
-                            window.open(
-                              `${BASE_URL}/${r.bill_sign}`,
-                              "_blank"
-                            )
+                            window.open(`${BASE_URL}/${r.bill_sign}`, "_blank")
                           }
                           alt=""
                         />
@@ -1060,10 +1091,7 @@ export default function BillReport() {
                               src={`${BASE_URL}/${img}`}
                               className="h-8 w-10 object-cover rounded border cursor-pointer"
                               onClick={() =>
-                                window.open(
-                                  `${BASE_URL}/${img}`,
-                                  "_blank"
-                                )
+                                window.open(`${BASE_URL}/${img}`, "_blank")
                               }
                               alt=""
                             />
@@ -1086,21 +1114,32 @@ export default function BillReport() {
             {/* Modal แสดง + แก้ไขรูป */}
             {(modalSignUrl || modalImages.length > 0) && (
               <div
-                className="fixed inset-0 z-100000 flex items-center justify-center bg-white/30 backdrop-blur-sm"
+                className="fixed inset-0 z-[9999999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-2"
                 onClick={closeImageModal}
               >
                 <div
-                  className="bg-white rounded-lg max-w-3xl w-full mx-4 p-4"
+                  className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] flex flex-col"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="text-sm font-semibold flex flex-col gap-1">
-                      <div className="flex gap-10">
-                        <div>SN: {modalSerialNo || "-"}</div>
-                        <div>REF: {modalReference || "-"}</div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50 rounded-t-xl">
+                    <div className="flex flex-col gap-1 text-sm">
+                      <div className="flex flex-wrap gap-6 items-center">
+                        <span className="font-semibold text-gray-800">
+                          SN:{" "}
+                          <span className="font-mono">
+                            {modalSerialNo || "-"}
+                          </span>
+                        </span>
+                        <span className="font-semibold text-gray-800">
+                          REF:{" "}
+                          <span className="font-mono">
+                            {modalReference || "-"}
+                          </span>
+                        </span>
                       </div>
 
-                      <div className="flex flex-wrap gap-4 text-xs">
+                      <div className="flex flex-wrap gap-4 text-xs text-gray-700 mt-1">
                         <span>
                           คนขับ:{" "}
                           {modalBillInfo.name || modalBillInfo.surname
@@ -1112,31 +1151,55 @@ export default function BillReport() {
                         <span>
                           ทะเบียนรถ: {modalBillInfo.license_plate || "-"}
                         </span>
-                        <span>หมายเหตุ: {modalBillInfo.remark || "-"}</span>
+                        <span className="truncate max-w-[260px]">
+                          หมายเหตุ: {modalBillInfo.remark || "-"}
+                        </span>
                       </div>
                     </div>
 
                     <button
-                      className="text-gray-500 hover:text-black text-lg"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-500 hover:text-gray-900 hover:border-gray-400 transition"
                       onClick={closeImageModal}
                     >
                       ✕
                     </button>
                   </div>
 
-                  {/* แถบปุ่มจัดการ */}
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex gap-2">
+                  {/* Toolbar */}
+                  <div className="flex items-center justify-between px-5 py-2 border-b bg-white">
+                    <div className="flex items-center gap-3 text-xs">
                       <button
-                        className={`px-3 py-1 text-xs rounded border ${
+                        className={`px-3 py-1 rounded-full border text-xs font-medium transition ${
                           isEditingImages
                             ? "bg-yellow-100 border-yellow-300 text-yellow-800"
-                            : "bg-gray-100 border-gray-300 text-gray-700"
+                            : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
                         }`}
-                        onClick={() => setIsEditingImages((prev) => !prev)}
+                        onClick={() => {
+                          setIsEditingImages((prev) => !prev);
+                          setImagesToDelete([]);
+                          setImageEditError(null);
+                        }}
                       >
-                        {isEditingImages ? "ยกเลิกโหมดแก้ไขรูป" : "แก้ไขรูปภาพ"}
+                        {isEditingImages ? "ปิดโหมดแก้ไขรูป" : "แก้ไขรูปภาพ"}
                       </button>
+
+                      {isEditingImages && (
+                        <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                          <span>
+                            ✓ คลิกรูปเพื่อเลือก/ยกเลิกเลือกลบ{" "}
+                            {imagesToDelete.length > 0 && (
+                              <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-[1px] ml-1">
+                                จะลบ {imagesToDelete.length} รูป
+                              </span>
+                            )}
+                          </span>
+                          {newImages.length > 0 && (
+                            <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-2 py-[1px]">
+                              รูปใหม่ {newImages.length} รูป
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <button
@@ -1146,111 +1209,182 @@ export default function BillReport() {
                         }
                       }}
                       disabled={!modalBillId}
-                      className={`px-3 py-1 text-xs rounded 
-                      ${
-                        modalBillId
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition
+            ${
+              modalBillId
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-sm"
+                : "bg-gray-200 text-gray-500 cursor-not-allowed"
+            }`}
                     >
-                      Download
+                      ดาวน์โหลดทั้งหมด
                     </button>
                   </div>
 
+                  {/* Error แก้รูป */}
                   {imageEditError && (
-                    <div className="mb-2 text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded">
+                    <div className="mx-5 mt-2 text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
                       {imageEditError}
                     </div>
                   )}
 
-                  {/* === ลายเซ็น === */}
-                  {modalSignUrl && (
-                    <div className="mb-4">
-                      <div className="text-xs font-bold text-gray-700 mb-1">
-                        ลายเซ็น
-                      </div>
-                      <img
-                        src={modalSignUrl}
-                        className="w-40 h-auto rounded border cursor-pointer"
-                        onClick={() => window.open(modalSignUrl, "_blank")}
-                        alt="signature"
-                      />
-                    </div>
-                  )}
-
-                  {/* === รูปภาพจาก bill_image_urls === */}
-                  {modalImages.length > 0 && (
-                    <>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="text-xs font-bold text-gray-700">
-                          รูปถ่าย
+                  {/* Body (scrollable) */}
+                  <div className="flex-1 overflow-auto px-5 py-4 space-y-4 bg-white">
+                    {/* ลายเซ็น */}
+                    {modalSignUrl && (
+                      <div>
+                        <div className="text-xs font-semibold text-gray-700 mb-2">
+                          ลายเซ็น
                         </div>
-                        {isEditingImages && (
-                          <span className="text-[10px] text-gray-500">
-                            คลิกที่รูปเพื่อเลือก/ยกเลิกเลือกลบ
+                        <div className="inline-flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                          <img
+                            src={modalSignUrl}
+                            className="w-40 h-auto rounded border bg-white cursor-pointer"
+                            onClick={() => window.open(modalSignUrl, "_blank")}
+                            alt="signature"
+                          />
+                          <span className="text-[11px] text-gray-500">
+                            คลิกเพื่อเปิดภาพลายเซ็นในแท็บใหม่
                           </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* รูปถ่าย */}
+                    {modalImages.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-xs font-semibold text-gray-700">
+                            รูปถ่าย ({modalImages.length} รูป)
+                          </div>
+                          {isEditingImages && (
+                            <button
+                              type="button"
+                              className="text-[11px] text-red-500 hover:underline"
+                              onClick={() => setImagesToDelete(modalImages)}
+                            >
+                              เลือกทุกรูปเพื่อลบ
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {modalImages.map((url, i) => {
+                            const marked = imagesToDelete.includes(url);
+                            return (
+                              <div
+                                key={i}
+                                className={`relative rounded-lg border overflow-hidden shadow-sm transition ${
+                                  marked
+                                    ? "bg-red-300/80 border-red-500"
+                                    : "bg-gray-50 hover:shadow-md"
+                                }`}
+                              >
+                                <img
+                                  src={url}
+                                  className="w-full h-32 object-cover cursor-pointer"
+                                  onClick={() =>
+                                    isEditingImages
+                                      ? toggleImageDelete(url)
+                                      : window.open(url, "_blank")
+                                  }
+                                  alt=""
+                                />
+
+                                {/* แถบมุมบนซ้าย */}
+                                {isEditingImages && (
+                                  <div className="absolute top-1 left-1 rounded-full px-2 py-[1px] text-[10px] font-semibold bg-black/60 text-white">
+                                    {marked ? "จะลบ" : "คงไว้"}
+                                  </div>
+                                )}
+
+                                {/* แถบมุมล่างขวา: ขนาดไฟล์ / ลำดับ */}
+                                <div className="absolute bottom-1 right-1 rounded-full px-2 py-[1px] text-[10px] bg-white/80 text-gray-700 border border-gray-200">
+                                  รูปที่ {i + 1}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* เพิ่มรูปใหม่ (เฉพาะโหมดแก้ไข) */}
+                    {isEditingImages && (
+                      <div className="pt-2 border-t border-dashed border-gray-200 mt-2">
+                        <div className="text-xs font-semibold text-gray-700 mb-1">
+                          เพิ่มรูปใหม่
+                        </div>
+
+                        {/* ปุ่มเลือกไฟล์ */}
+                        <div className="flex items-center gap-3 text-xs">
+                          <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full cursor-pointer hover:bg-blue-100">
+                            <span className="text-blue-700 font-medium">
+                              เลือกไฟล์
+                            </span>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={handleNewImagesChange}
+                              className="hidden"
+                            />
+                          </label>
+                          <span className="text-[11px] text-gray-500">
+                            รองรับไฟล์ภาพหลายไฟล์ในครั้งเดียว (รวมทั้งหมดไม่เกิน
+                            8 รูป)
+                          </span>
+                        </div>
+
+                        {newImages.length > 0 && (
+                          <>
+                            <div className="mt-1 text-[11px] text-gray-600">
+                              เลือกแล้ว {newImages.length} ไฟล์
+                            </div>
+
+                            {/* ⭐ พรีวิวรูปใหม่ + กดลบได้ */}
+                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                              {newImages.map((file, idx) => {
+                                const previewUrl = URL.createObjectURL(file);
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="relative rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-1 flex flex-col items-center gap-1"
+                                  >
+                                    <img
+                                      src={previewUrl}
+                                      className="w-full h-24 object-cover rounded-md bg-white border"
+                                      alt={file.name}
+                                    />
+                                    <div className="text-[10px] text-gray-700 text-center px-1 truncate w-full">
+                                      {file.name}
+                                    </div>
+
+                                    <div className="absolute top-1 left-1 rounded-full bg-blue-600 text-white text-[10px] px-2 py-[1px]">
+                                      ใหม่
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      className="absolute top-1 right-1 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] shadow hover:bg-red-600"
+                                      onClick={() => removeNewImage(idx)}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-2 max-h-[50vh] overflow-auto mb-3">
-                        {modalImages.map((url, i) => {
-                          const marked = imagesToDelete.includes(url);
-                          return (
-                            <div
-                              key={i}
-                              className={`relative rounded border overflow-hidden ${
-                                marked
-                                  ? "ring-2 ring-red-400 opacity-70"
-                                  : "opacity-100"
-                              }`}
-                            >
-                              <img
-                                src={url}
-                                className="w-full h-30 object-cover cursor-pointer"
-                                onClick={() =>
-                                  isEditingImages
-                                    ? toggleImageDelete(url)
-                                    : window.open(url, "_blank")
-                                }
-                                alt=""
-                              />
-                              {isEditingImages && (
-                                <div className="absolute top-1 right-1 bg-white/80 rounded px-1 text-[10px]">
-                                  {marked ? "ลบ" : "คงไว้"}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
+                    )}
+                  </div>
 
-                  {/* === ส่วนเพิ่มรูปใหม่ (เฉพาะตอนโหมดแก้ไข) === */}
+                  {/* Footer buttons */}
                   {isEditingImages && (
-                    <div className="mb-3">
-                      <div className="text-xs font-bold text-gray-700 mb-1">
-                        เพิ่มรูปใหม่
-                      </div>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleNewImagesChange}
-                        className="text-xs"
-                      />
-                      {newImages.length > 0 && (
-                        <div className="mt-1 text-[11px] text-gray-600">
-                          เลือกแล้ว {newImages.length} ไฟล์
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ปุ่มบันทึก (สำหรับโหมดแก้ไขรูป) */}
-                  {isEditingImages && (
-                    <div className="flex justify-end mt-4 gap-2">
+                    <div className="px-5 py-3 border-t bg-gray-50 rounded-b-xl flex justify-end gap-2">
                       <button
-                        className="px-3 py-1 text-xs rounded border border-gray-300 bg-gray-100 text-gray-700"
+                        className="px-3 py-1.5 text-xs rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
                         onClick={() => {
                           setIsEditingImages(false);
                           setImagesToDelete([]);
@@ -1258,19 +1392,25 @@ export default function BillReport() {
                           setImageEditError(null);
                         }}
                       >
-                        ยกเลิก
+                        ยกเลิกการแก้ไข
                       </button>
                       <button
                         onClick={handleSaveImages}
                         disabled={savingImages}
-                        className={`px-3 py-1 text-xs rounded ${
+                        className={`px-4 py-1.5 text-xs rounded-full font-medium transition ${
                           savingImages
                             ? "bg-blue-300 text-white cursor-wait"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
+                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                         }`}
                       >
-                        {savingImages ? "กำลังบันทึก..." : "บันทึก"}
+                        {savingImages ? "กำลังบันทึก..." : "บันทึกการแก้ไขรูป"}
                       </button>
+                    </div>
+                  )}
+
+                  {!isEditingImages && (
+                    <div className="px-5 py-2 border-t bg-gray-50 rounded-b-xl text-[11px] text-gray-500 text-right">
+                      คลิกที่รูปในตารางหลักเพื่อเปิดหน้าต่างนี้อีกครั้ง
                     </div>
                   )}
                 </div>
