@@ -8,6 +8,83 @@ layer(base);
 
 @custom-variant dark (&:is(.dark *));
 
+
+/* @media print {
+  @page {
+    size: 10cm 7.5cm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 10cm !important;
+    height: 7.5cm !important;
+  }
+
+   body * {
+    visibility: hidden !important;
+  }
+
+  #label-print-area,
+  #label-print-area * {
+    visibility: visible !important;
+  }
+
+  #label-print-area {
+    position: absolute;
+    inset: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  .label-item {
+    page-break-inside: avoid !important;
+    margin: 0 !important;
+    width: 9.8cm !important;
+    height: 7.2cm !important;
+  }
+} */
+
+
+@media print {
+  @page {
+    size: 100mm 75mm;   /* 10 x 7.5 cm */
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ซ่อนกรอบ UI ของเว็บ */
+  header,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* ให้โซน labels อยู่ตัวเดียวในหน้า */
+  #label-print-area {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* กล่อง label แต่ละใบ */
+  .label-item {
+    padding: 2mm !important; 
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+   }
+}
+
 @theme {
   --font-*: initial;
   --font-outfit: Outfit, sans-serif;

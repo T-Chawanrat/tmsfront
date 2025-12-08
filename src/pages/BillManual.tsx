@@ -1265,7 +1265,7 @@ export default function BillManual() {
                     key={idx}
                     className={`transition ${
                       idx % 2 === 0 ? "bg-white" : "bg-slate-50"
-                    } hover:bg-blue-50/50`}
+                    } hover:bg-blue-100/70`}
                   >
                     <td className="px-2 py-1.5 border-b border-slate-200  bg-gray-100 font-semibold text-center sticky left-0 z-10">
                       {idx + 1}

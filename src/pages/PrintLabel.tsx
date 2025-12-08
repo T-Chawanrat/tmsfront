@@ -416,13 +416,12 @@ type BillRow = {
 };
 
 type LabelRow = BillRow & {
-  barcode_url: string;
-  qr_url: string;
+  barcode_url?: string;
+  qr_url?: string;
 };
 
 export default function LabelPage() {
   const { user } = useAuth();
-
   const [bills, setBills] = useState<BillRow[]>([]);
   const [labels, setLabels] = useState<LabelRow[]>([]);
   const [loadingBills, setLoadingBills] = useState(false);
@@ -431,9 +430,15 @@ export default function LabelPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const toggleSelect = (id: number) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedIds((prev) => {
+      const next = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
+      if (next.length > 0) {
+        setError(null); // มีการเลือกรายการแล้ว ล้าง error
+      }
+      return next;
+    });
   };
 
   const toggleSelectAll = () => {
@@ -441,6 +446,9 @@ export default function LabelPage() {
       setSelectedIds([]);
     } else {
       setSelectedIds(bills.map((b) => b.id));
+      if (bills.length > 0) {
+        setError(null);
+      }
     }
   };
 
@@ -481,21 +489,28 @@ export default function LabelPage() {
       return;
     }
 
-    const filtered = labels.filter((r) => selectedIds.includes(r.id));
+    setError(null);
+
+    // สำคัญ: filter จาก bills ไม่ใช่ labels
+    const filtered = bills.filter((r) => selectedIds.includes(r.id));
     setLabels(filtered);
     setStep("labels");
+  };
+
+  const handleBackToBills = () => {
+    setStep("bills");
+    setError(null); // ไม่ให้ error ตามกลับมา
+    setLabels(bills); // คืน labels ให้เป็นทั้งหมด
+    // ถ้าอยากให้ user เลือกใหม่ทุกครั้ง:
+    // setSelectedIds([]);
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleBackToBills = () => {
-    setStep("bills");
-  };
-
   const headers = [
-    <div className="flex justify-center w-[10px]" key="select-all">
+    <div className="px-2 flex items-center justify-center" key="select-all">
       <input
         type="checkbox"
         checked={bills.length > 0 && selectedIds.length === bills.length}
@@ -511,7 +526,7 @@ export default function LabelPage() {
   ];
 
   return (
-    <div className="font-thai w-full min-h-screen bg-white px-4 py-5 print:bg-white">
+    <div className="font-thai w-full min-h-screen bg-white px-4 py-5 print:bg-white print:p-0 print:m-0">
       {/* Header + Action (ซ่อนตอน print) */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex flex-col gap-1">
@@ -604,21 +619,20 @@ export default function LabelPage() {
                     headers={headers}
                     pageKey="labels-page"
                     minWidths={{
-                      0: 60,
+                      0: 10,
                       1: 60,
                     }}
                   />
-
                   <tbody>
                     {bills.map((b, idx) => (
                       <tr
                         key={b.id}
                         className={`transition ${
                           idx % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        } hover:bg-blue-50/50`}
+                        } hover:bg-blue-100/70`}
                       >
                         {/* Checkbox */}
-                        <td className="w-[10px] px-2 py-1.5 border-b border-slate-200 text-center align-middle">
+                        <td className="px-2 py-1.5 border-b border-slate-200 text-center align-middle">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(b.id)}
@@ -627,7 +641,7 @@ export default function LabelPage() {
                         </td>
 
                         {/* ลำดับ */}
-                        <td className="w-[60px] px-3 py-1.5 border-b border-slate-200  bg-slate-100 font-semibold text-center sticky left-0 z-10">
+                        <td className="w-[60px] px-3 py-1.5 border-b border-slate-200  bg-gray-100 font-semibold text-center sticky left-0 z-10">
                           {idx + 1}
                         </td>
 
@@ -676,37 +690,36 @@ export default function LabelPage() {
       {/* STEP 2: Preview Labels + Print */}
       {step === "labels" && (
         <div
-          className="
-            flex flex-wrap gap-4
-            print:gap-0 print:m-0
-          "
+          id="label-print-area"
+          className="flex flex-wrap gap-4 print:gap-0 print:m-0"
         >
           {labels.map((row) => (
             <div
               key={row.id}
-              className="
+              className="label-item
                 bg-white border border-slate-300 rounded-lg shadow-sm
                 p-2 box-border
-                print:shadow-none print:border print:border-black
+                print:p-0 print:border-none print:shadow-none print:rounded-none
               "
               style={{
-                width: "10cm",
-                height: "7.5cm",
+                width: "9.8cm",
+                height: "7.2cm",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
               }}
             >
               {/* BARCODE + Serial text */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 items-center text-center">
                 {row.barcode_url && (
-                  <div className="flex flex-col">
+                  <div className="flex flex-col items-center">
                     <img
+                      className=""
                       src={row.barcode_url}
                       alt={`BARCODE_${row.SERIAL_NO}`}
-                      style={{ maxWidth: "100%", maxHeight: "1.5cm" }}
+                      style={{ maxWidth: "80%", maxHeight: "1.5cm" }}
                     />
-                    <div className="text-lg tracking-widest font-bold text-center">
+                    <div className="text-[15px] tracking-widest font-bold">
                       {row.SERIAL_NO}
                     </div>
                   </div>
@@ -714,8 +727,8 @@ export default function LabelPage() {
               </div>
 
               {/* Address */}
-              <div className="text-[10px] leading-snug mt-1">
-                <div className="font-semibold">
+              <div className="text-[10.5px] font-bold leading-snug mt-1">
+                <div className="font-extrabold">
                   ผู้รับ: {row.RECIPIENT_NAME || "-"}
                 </div>
                 <div>
@@ -728,8 +741,8 @@ export default function LabelPage() {
               </div>
 
               {/* QR + extra info */}
-              <div className="flex justify-between items-center mt-1">
-                <div className="text-[10px]">
+              <div className="flex justify-between items-center">
+                <div className="text-[11px] font-bold">
                   <div>Ref: {row.REFERENCE || "-"}</div>
                   <div>
                     วันที่: {new Date().toLocaleDateString("th-TH")}{" "}
@@ -750,7 +763,7 @@ export default function LabelPage() {
                   <img
                     src={row.qr_url}
                     alt={`QR_${row.SERIAL_NO}`}
-                    style={{ width: "2.8cm", height: "2.8cm" }}
+                    style={{ width: "2.7cm", height: "2.7cm" }}
                   />
                 )}
               </div>
