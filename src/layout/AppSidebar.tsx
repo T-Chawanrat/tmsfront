@@ -519,11 +519,11 @@ const navItems: NavItem[] = [
         path: "/dc-scan",
         icon: <File size={20} />,
       },
-      {
-        name: "ดูรูป bills",
-        path: "/bills",
-        icon: <File size={20} />,
-      },
+      // {
+      //   name: "ดูรูป bills",
+      //   path: "/bills",
+      //   icon: <File size={20} />,
+      // },
       {
         name: "report",
         path: "/report",

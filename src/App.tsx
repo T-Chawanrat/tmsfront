@@ -31,7 +31,7 @@ import { ColumnWidthsProvider } from "./context/ColumnWidths";
 // import Sla from "./pages/Sla";
 // import Bookings from "./pages/Bookings";
 import Vgt from "./pages/Vgt";
-import Bills from "./pages/Bills";
+// import Bills from "./pages/Bills";
 // import LayoutONtruck from "./pages/Ontruck/LayoutOntruck";
 // import LayoutNoImage from "./pages/NoImage/LayoutNoImage";
 import BillImport from "./pages/BillImport";
@@ -143,7 +143,7 @@ export default function App() {
               /> */}
 
             <Route path="/vgt" element={<Vgt />} />
-            <Route path="/bills" element={<Bills />} />
+            {/* <Route path="/bills" element={<Bills />} /> */}
             <Route path="/import" element={<BillImport />} />
             <Route path="/importvgt" element={<BillImportVGT />} />
             <Route path="/importadv" element={<BillImportADV />} />
