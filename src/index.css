@@ -50,6 +50,11 @@ layer(base);
   }
 } */
 
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
+
 
 @media print {
   @page {

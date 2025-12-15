@@ -400,6 +400,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import ResizableColumns from "../components/ResizableColumns";
+import DatePicker from "react-datepicker";
+import { format } from "date-fns";
+import { FilterDropdown } from "../components/dropdown/FilterDropdown";
 
 type BillRow = {
   id: number;
@@ -412,6 +415,7 @@ type BillRow = {
   RECIPIENT_DISTRICT: string;
   RECIPIENT_PROVINCE: string;
   RECIPIENT_ZIPCODE: string;
+  RECIPIENT_CODE: string;
   warehouse_name: string;
 };
 
@@ -428,6 +432,26 @@ export default function LabelPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"bills" | "labels">("bills");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const [showReprint, setShowReprint] = useState(false);
+  const [reprintLoading, setReprintLoading] = useState(false);
+  const [reprintRows, setReprintRows] = useState<LabelRow[]>([]);
+  const [reprintSelectedIds, setReprintSelectedIds] = useState<number[]>([]);
+  const [reprintAllRows, setReprintAllRows] = useState<LabelRow[]>([]);
+
+  const [filters, setFilters] = useState<{
+    serial: string;
+    reference: string;
+    date: string; // ✅ string
+    customer_name: string;
+    warehouse_name: string;
+  }>({
+    serial: "",
+    reference: "",
+    date: "",
+    customer_name: "",
+    warehouse_name: "",
+  });
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -525,6 +549,76 @@ export default function LabelPage() {
     "warehouse_name",
   ];
 
+  const fetchReprint = async () => {
+    if (!user?.user_id) return;
+
+    setReprintLoading(true);
+
+    try {
+      const res = await axios.get("https://xsendwork.com/api/print-labels", {
+        params: {
+          user_id: user.user_id,
+          serial: filters.serial || undefined,
+          reference: filters.reference || undefined,
+          date: filters.date || undefined,
+          customer_name: filters.customer_name || undefined,
+          warehouse_name: filters.warehouse_name || undefined,
+        },
+      });
+
+      if (res.data?.success) {
+        setReprintRows(res.data.data || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setReprintLoading(false);
+    }
+  };
+
+  const customerOptions = Array.from(
+    new Set(reprintAllRows.map((r) => r.CUSTOMER_NAME).filter(Boolean))
+  );
+
+  const warehouseOptions = Array.from(
+    new Set(reprintAllRows.map((r) => r.warehouse_name).filter(Boolean))
+  );
+
+  useEffect(() => {
+    if (!showReprint) return;
+
+    const timer = setTimeout(() => {
+      fetchReprint();
+    }, 300); // แนะนำ 250-300
+
+    return () => clearTimeout(timer);
+  }, [
+    showReprint,
+    filters.serial,
+    filters.reference,
+    filters.date,
+    filters.customer_name,
+    filters.warehouse_name,
+  ]);
+
+  useEffect(() => {
+    if (!showReprint) return;
+
+    (async () => {
+      try {
+        const res = await axios.get("https://xsendwork.com/api/print-labels", {
+          params: { user_id: user?.user_id },
+        });
+        if (res.data?.success) {
+          setReprintAllRows(res.data.data || []);
+          setReprintRows(res.data.data || []); // แสดงครั้งแรกด้วย
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [showReprint, user?.user_id]);
+
   return (
     <div className="font-thai w-full min-h-screen bg-white px-4 py-5 print:bg-white print:p-0 print:m-0">
       {/* Header + Action (ซ่อนตอน print) */}
@@ -551,18 +645,30 @@ export default function LabelPage() {
           </div>
 
           {step === "bills" ? (
-            <button
-              onClick={handleCreateLabels}
-              disabled={!bills.length}
-              className={`px-4 py-1.5 rounded-full  font-medium transition
-                ${
-                  !bills.length
-                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                }`}
-            >
-              สร้าง Label
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCreateLabels}
+                disabled={!bills.length}
+                className={`px-4 py-1.5 rounded-full font-medium transition
+      ${
+        !bills.length
+          ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+          : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+      }`}
+              >
+                สร้าง Label
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowReprint(true);
+                  setReprintSelectedIds([]);
+                }}
+                className="px-4 py-1.5 rounded-full font-medium transition border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              >
+                พิมพ์ซ้ำ
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <button
@@ -737,7 +843,10 @@ export default function LabelPage() {
                   {row.RECIPIENT_DISTRICT || "-"} จ.
                   {row.RECIPIENT_PROVINCE || "-"} {row.RECIPIENT_ZIPCODE || ""}
                 </div>
-                <div>ปลายทาง: {row.warehouse_name || "-"}</div>
+                <div className="text-[13px]">
+                  ปลายทาง: {row.warehouse_name || "-"}
+                </div>
+                
               </div>
 
               {/* QR + extra info */}
@@ -757,6 +866,7 @@ export default function LabelPage() {
                     จัดส่งโดย: บริษัท ทรานเทค แมนเนจเม้นท์ กรุ๊ปส์ จำกัด
                   </div>
                   <div>โทร. 065-005-2555</div>
+                  <div>S: {row.RECIPIENT_CODE || "-"}</div>
                 </div>
 
                 {row.qr_url && (
@@ -769,6 +879,188 @@ export default function LabelPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showReprint && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 print:hidden">
+          <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg border border-slate-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+              <div className="font-bold text-slate-800">
+                พิมพ์ซ้ำ (ค้นหา/กรอง)
+              </div>
+              <button
+                onClick={() => setShowReprint(false)}
+                className="px-3 py-1.5 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              >
+                ปิด
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div
+              className="px-4 py-3 grid gap-2 text-sm whitespace-nowrap items-center"
+              style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
+            >
+              <input
+                className="h-8 border border-slate-300 rounded-lg px-3 py-2 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                placeholder="ค้นหา SERIAL_NO"
+                value={filters.serial}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, serial: e.target.value }))
+                }
+              />
+              <input
+                className="h-8 border border-slate-300 rounded-lg px-3 py-2 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                placeholder="ค้นหา REFERENCE"
+                value={filters.reference}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, reference: e.target.value }))
+                }
+              />
+
+              <div className="min-w-0 w-full">
+                <DatePicker
+                  selected={filters.date ? new Date(filters.date) : null}
+                  onChange={(date: Date | null) => {
+                    const v = date ? format(date, "yyyy-MM-dd") : "";
+                    setFilters((p) => ({ ...p, date: v }));
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="เลือกวันที่"
+                  className="border border-slate-300 rounded-lg px-3 py-2 h-8 w-full min-w-0 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                  wrapperClassName="w-full min-w-0"
+                />
+              </div>
+
+              <FilterDropdown
+                value={filters.customer_name}
+                onChange={(v: string) =>
+                  setFilters((p) => ({ ...p, customer_name: v }))
+                }
+                options={customerOptions}
+                placeholder="ค้นหาลูกค้า"
+              />
+
+              <FilterDropdown
+                value={filters.warehouse_name}
+                onChange={(v: string) =>
+                  setFilters((p) => ({ ...p, warehouse_name: v }))
+                }
+                options={warehouseOptions}
+                placeholder="ค้นหา DC"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="px-4 pb-3 flex items-center gap-2">
+              {/* <button
+                onClick={fetchReprint}
+                className="px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+              >
+                ค้นหา
+              </button> */}
+              <button
+                onClick={() => {
+                  // เอาที่เลือกไปพิมพ์ด้วย UI เดิมของคุณ
+                  const picked = reprintRows.filter((r) =>
+                    reprintSelectedIds.includes(r.id)
+                  );
+                  setLabels(picked);
+                  setStep("labels");
+                  setShowReprint(false);
+                }}
+                disabled={!reprintSelectedIds.length}
+                className={`px-4 py-1.5 rounded-full font-medium transition
+            ${
+              !reprintSelectedIds.length
+                ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+            }`}
+              >
+                ไปหน้าพิมพ์
+              </button>
+            </div>
+
+            {/* Results table (ย่อ ๆ) */}
+            <div className="px-4 pb-4">
+              <div className="relative max-h-[55vh] overflow-auto border border-slate-200 rounded-xl">
+                {reprintLoading && (
+                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+                    <div className="text-sm text-slate-500">กำลังค้นหา...</div>
+                  </div>
+                )}
+
+                <table className="border-collapse min-w-max text-[13px] w-full">
+                  <thead className="sticky top-0 bg-white z-10">
+                    <tr>
+                      <th className="p-2 border-b border-slate-200 text-center">
+                        เลือก
+                      </th>
+                      <th className="p-2 border-b border-slate-200">
+                        SERIAL_NO
+                      </th>
+                      <th className="p-2 border-b border-slate-200">
+                        REFERENCE
+                      </th>
+                      <th className="p-2 border-b border-slate-200">
+                        CUSTOMER_NAME
+                      </th>
+                      <th className="p-2 border-b border-slate-200">
+                        warehouse_name
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reprintRows.map((r, i) => (
+                      <tr
+                        key={r.id}
+                        className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                      >
+                        <td className="p-2 border-b border-slate-200 text-center">
+                          <input
+                            type="checkbox"
+                            checked={reprintSelectedIds.includes(r.id)}
+                            onChange={() =>
+                              setReprintSelectedIds((prev) =>
+                                prev.includes(r.id)
+                                  ? prev.filter((x) => x !== r.id)
+                                  : [...prev, r.id]
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="p-2 border-b border-slate-200 font-mono">
+                          {r.SERIAL_NO || "-"}
+                        </td>
+                        <td className="p-2 border-b border-slate-200">
+                          {r.REFERENCE || "-"}
+                        </td>
+                        <td className="p-2 border-b border-slate-200">
+                          {r.CUSTOMER_NAME || "-"}
+                        </td>
+                        <td className="p-2 border-b border-slate-200">
+                          {r.warehouse_name || "-"}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {!reprintRows.length && !reprintLoading && (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="p-4 text-center text-slate-500"
+                        >
+                          ไม่พบข้อมูล
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

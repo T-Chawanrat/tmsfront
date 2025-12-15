@@ -514,7 +514,7 @@ export default function BillImportVGT() {
 
   return (
     <div
-      className={`font-thai w/full min-h-screen bg-white px-4 py-5 ${
+      className={`font-thai w/full h-[70vh] bg-white px-4 py-5 ${
         loading || saving ? "cursor-wait" : ""
       }`}
     >

@@ -1231,7 +1231,7 @@ export default function BillReport() {
   // UI
   // ------------------------------------------
   return (
-    <div className="font-thai w-full min-h-screen bg-white px-4 py-5">
+    <div className="font-thai w-full h-[70vh] bg-white px-4 py-5">
       {/* Header / Summary */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">

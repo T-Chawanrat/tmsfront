@@ -38,12 +38,11 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
     event.preventDefault();
 
     const startX = event.clientX;
-    const startWidth = columnWidths[index];
+    const startWidth = columnWidths[index] ?? 120; // ⭐ กัน undefined ให้มีค่าเริ่มต้น
     const min = minWidths[index] ?? 50;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = moveEvent.clientX - startX;
-      // const newWidth = Math.max(startWidth + deltaX, 50);
       const newWidth = Math.max(startWidth + deltaX, min);
       setColumnWidths((prevWidths) =>
         prevWidths.map((width, i) => (i === index ? newWidth : width))
@@ -80,7 +79,6 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
     document.addEventListener("touchend", handleTouchEnd);
   };
 
-  // 🔥 Auto fit column ด้วย double-click ที่เส้นแบ่ง header
   const handleAutoFit = (
     index: number,
     event: React.MouseEvent<HTMLSpanElement>
@@ -91,17 +89,15 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
 
     const rows = Array.from(table.querySelectorAll("tr"));
     let maxWidth = minWidths[index] ?? 60;
-    // let maxWidth = 60; // ค่าเริ่มต้นขั้นต่ำ
 
     rows.forEach((row) => {
       const cell = row.children[index] as HTMLElement | undefined;
       if (!cell) return;
 
-      // พยายามหา content จริงด้านในก่อน ถ้าไม่มีใช้ cell ตรง ๆ
       const inner =
         (cell.querySelector("span, div, p") as HTMLElement | null) || cell;
 
-      const width = inner.scrollWidth + 16; // + padding เผื่อ
+      const width = inner.scrollWidth + 16;
       if (width > maxWidth) maxWidth = width;
     });
 
@@ -114,7 +110,6 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
     <thead className="bg-gray-100">
       <tr>
         {headers.map((header, index) => {
-          // ถ้า header เป็น string → ใช้กับ headerKeyMapping / sort ได้
           const headerText = typeof header === "string" ? header : "";
           const headerKey = headerText
             ? headerKeyMapping[headerText]
@@ -123,15 +118,20 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
           const sortable = !!(headerKey && onSort);
           const isActiveSort = sortable && sortBy === headerKey;
 
-          // ถ้า header ไม่ใช่ string (เช่น JSX checkbox all) → ให้ถือว่าเป็นคอลัมน์พิเศษ
           const isCheckboxColumn = typeof header !== "string";
 
-          // ความกว้างคอลัมน์
-          // const widthPx = isCheckboxColumn ? 40 : columnWidths[index] || 120;
+          // ⭐⭐ ตรงนี้คือหัวใจ: แยก logic checkbox / ปกติ
+          let widthPx: number;
 
-          const min = minWidths[index] ?? (isCheckboxColumn ? 40 : 60);
-          const baseWidth = columnWidths[index] || 120;
-          const widthPx = Math.max(min, baseWidth); // 👈 ไม่ต่ำกว่า min
+          if (isCheckboxColumn) {
+            // คอลัมน์แบบ JSX (เช่น checkbox) → ให้แคบได้ตาม minWidths หรือ default เล็ก ๆ
+            widthPx = minWidths[index] ?? 28; // ← อยาก 20/24 ก็เปลี่ยนตรงนี้
+          } else {
+            const min = minWidths[index] ?? 60;
+            const baseWidth =
+              columnWidths[index] !== undefined ? columnWidths[index] : 120; // default เดิม
+            widthPx = Math.max(min, baseWidth);
+          }
 
           return (
             <th
@@ -155,10 +155,7 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
                   tabIndex={sortable ? 0 : undefined}
                   role={sortable ? "button" : undefined}
                 >
-                  {/* แสดง header ตรง ๆ: จะเป็น string หรือ JSX ก็ได้ */}
                   {header}
-
-                  {/* icon sort เฉพาะคอลัมน์ที่ sortable */}
                   {sortable && (
                     <span>
                       {isActiveSort ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
@@ -166,16 +163,27 @@ const ResizableColumns: React.FC<ResizableColumnsProps> = ({
                   )}
                 </span>
 
-                {/* เส้นสำหรับ resize + double-click auto fit
-            👉 ไม่แสดงสำหรับคอลัมน์ checkbox */}
-                {!isCheckboxColumn && (
-                  <span
-                    className="absolute right-0 top-0 h-full w-1 bg-transparent cursor-col-resize border-r-1 border-gray-300"
-                    onMouseDown={(e) => handleMouseDown(index, e)}
-                    onDoubleClick={(e) => handleAutoFit(index, e)}
-                    onTouchStart={(e) => handleTouchStart(index, e)}
-                  />
-                )}
+                {/* คอลัมน์ checkbox ยังไม่มี handle resize เหมือนเดิม */}
+                <span
+                  className={`absolute right-0 top-0 h-full w-1 border-r border-gray-300 ${
+                    isCheckboxColumn ? "" : "cursor-col-resize"
+                  }`}
+                  onMouseDown={
+                    isCheckboxColumn
+                      ? undefined
+                      : (e) => handleMouseDown(index, e)
+                  }
+                  onDoubleClick={
+                    isCheckboxColumn
+                      ? undefined
+                      : (e) => handleAutoFit(index, e)
+                  }
+                  onTouchStart={
+                    isCheckboxColumn
+                      ? undefined
+                      : (e) => handleTouchStart(index, e)
+                  }
+                />
               </div>
             </th>
           );

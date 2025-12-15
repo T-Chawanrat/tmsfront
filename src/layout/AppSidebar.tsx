@@ -519,11 +519,11 @@ const navItems: NavItem[] = [
         path: "/dc-scan",
         icon: <File size={20} />,
       },
-      // {
-      //   name: "ดูรูป bills",
-      //   path: "/bills",
-      //   icon: <File size={20} />,
-      // },
+      {
+        name: "ดูรูป bills",
+        path: "/bills",
+        icon: <File size={20} />,
+      },
       {
         name: "report",
         path: "/report",
@@ -744,86 +744,183 @@ const AppSidebar: React.FC = () => {
   };
 
   return (
-    <aside
-      className={`font-thai fixed mt-[48px] flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
-      ${isExpanded || isMobileOpen ? "w-[290px]" : "w-[90px]"}
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0`}
-    >
-      <div
-        className={`py-8 flex ${
-          !isExpanded ? "lg:justify-center" : "justify-start"
-        }`}
-      >
-        {/* <Link to="/"> */}
-        {isExpanded || isMobileOpen ? (
-          <>
-            <img
-              className="dark:hidden"
-              src="/images/logo/logo.png"
-              alt="Logo"
-              width={130}
-              height={40}
-            />
-            <img
-              className="hidden dark:block"
-              src="/images/logo/logo-dark.svg"
-              alt="Logo"
-              width={130}
-              height={40}
-            />
-          </>
-        ) : (
-          <img
-            src="/images/logo/logo-icon.png"
-            alt="Logo"
-            width={32}
-            height={32}
-          />
-        )}
-        {/* </Link> */}
-      </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              {user && (
-                <>
-                  <h2
-                    className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                      !isExpanded ? "lg:justify-center" : "justify-start"
-                    }`}
-                  >
-                    {isExpanded || isMobileOpen ? (
-                      "Menu"
-                    ) : (
-                      <HorizontaLDots className="size-6" />
-                    )}
-                  </h2>
-                  {renderMenuItems(navItems, "main")}
-                </>
-              )}
-            </div>
-          </div>
-        </nav>
+    // <aside
+    //   className={`font-thai fixed mt-[48px] flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
+    //   ${isExpanded || isMobileOpen ? "w-[290px]" : "w-[90px]"}
+    //     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+    //     lg:translate-x-0`}
+    // >
+    //   <div
+    //     className={`py-8 flex ${
+    //       !isExpanded ? "lg:justify-center" : "justify-start"
+    //     }`}
+    //   >
+    //     {/* <Link to="/"> */}
+    //     {isExpanded || isMobileOpen ? (
+    //       <>
+    //         <img
+    //           className="dark:hidden"
+    //           src="/images/logo/logo.png"
+    //           alt="Logo"
+    //           width={130}
+    //           height={40}
+    //         />
+    //         <img
+    //           className="hidden dark:block"
+    //           src="/images/logo/logo-dark.svg"
+    //           alt="Logo"
+    //           width={130}
+    //           height={40}
+    //         />
+    //       </>
+    //     ) : (
+    //       <img
+    //         src="/images/logo/logo-icon.png"
+    //         alt="Logo"
+    //         width={32}
+    //         height={32}
+    //       />
+    //     )}
+    //     {/* </Link> */}
+    //   </div>
+    //   <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
+    //     <nav className="mb-6">
+    //       <div className="flex flex-col gap-4">
+    //         <div>
+    //           {user && (
+    //             <>
+    //               <h2
+    //                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+    //                   !isExpanded ? "lg:justify-center" : "justify-start"
+    //                 }`}
+    //               >
+    //                 {isExpanded || isMobileOpen ? (
+    //                   "Menu"
+    //                 ) : (
+    //                   <HorizontaLDots className="size-6" />
+    //                 )}
+    //               </h2>
+    //               {renderMenuItems(navItems, "main")}
+    //             </>
+    //           )}
+    //         </div>
+    //       </div>
+    //     </nav>
 
-        {user && (
-          <div className="mt-auto pb-8 flex flex-col items-center w-full">
-            <button
-              onClick={handleLogout}
-              className="menu-item group menu-item-inactive cursor-pointer w-full text-left hover:bg-brand-50 py-1"
-            >
-              <span className="w-5 h-5 flex items-center justify-center">
-                <LogOut className="text-brand-500" size={20} />
-              </span>
-              {(isExpanded || isMobileOpen) && (
-                <span className="menu-item-text text-brand-500">Logout</span>
-              )}
-            </button>
-          </div>
-        )}
+    //     {user && (
+    //       <div className="mt-auto pb-8 flex flex-col items-center w-full">
+    //         <button
+    //           onClick={handleLogout}
+    //           className="menu-item group menu-item-inactive cursor-pointer w-full text-left hover:bg-brand-50 py-1"
+    //         >
+    //           <span className="w-5 h-5 flex items-center justify-center">
+    //             <LogOut className="text-brand-500" size={20} />
+    //           </span>
+    //           {(isExpanded || isMobileOpen) && (
+    //             <span className="menu-item-text text-brand-500">Logout</span>
+    //           )}
+    //         </button>
+    //       </div>
+    //     )}
+    //   </div>
+    // </aside>
+
+
+    <aside
+  className={`
+    font-thai fixed top-0 left-0 z-50
+    mt-[48px] lg:mt-0
+    h-screen
+    bg-white text-slate-800
+    border-r border-slate-200 shadow-sm
+    dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800
+    transition-all duration-300 ease-in-out
+    ${isExpanded || isMobileOpen ? "w-[280px]" : "w-[90px]"}
+    ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+    lg:translate-x-0
+  `}
+>
+  <div
+    className={`py-8 flex ${
+      !isExpanded ? "lg:justify-center" : "justify-start"
+    }`}
+  >
+    {/* <Link to="/"> */}
+    {isExpanded || isMobileOpen ? (
+      <>
+        <img
+          className="dark:hidden"
+          src="/images/logo/logo.png"
+          alt="Logo"
+          width={130}
+          height={40}
+        />
+        <img
+          className="hidden dark:block"
+          src="/images/logo/logo-dark.svg"
+          alt="Logo"
+          width={130}
+          height={40}
+        />
+      </>
+    ) : (
+      <img
+        src="/images/logo/logo-icon.png"
+        alt="Logo"
+        width={32}
+        height={32}
+      />
+    )}
+    {/* </Link> */}
+  </div>
+
+  <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar duration-300 ease-linear">
+    <nav className="mb-6">
+      <div className="flex flex-col gap-4">
+        <div>
+          {user && (
+            <>
+              <h2
+                className={`mb-4 uppercase flex leading-[20px] text-slate-400 ${
+                  !isExpanded ? "lg:justify-center" : "justify-start"
+                }`}
+              >
+                {isExpanded || isMobileOpen ? (
+                  "Menu"
+                ) : (
+                  <HorizontaLDots className="size-6" />
+                )}
+              </h2>
+              {renderMenuItems(navItems, "main")}
+            </>
+          )}
+        </div>
       </div>
-    </aside>
+    </nav>
+
+    {user && (
+      <div className="mt-auto pb-8 flex flex-col items-center w-full">
+        <button
+          onClick={handleLogout}
+          className="
+            menu-item menu-item-inactive group
+            cursor-pointer w-full text-left
+            py-1
+            hover:bg-slate-50
+          "
+        >
+          <span className="w-5 h-5 flex items-center justify-center">
+            <LogOut className="text-brand-500" size={20} />
+          </span>
+          {(isExpanded || isMobileOpen) && (
+            <span className="menu-item-text text-brand-500">Logout</span>
+          )}
+        </button>
+      </div>
+    )}
+  </div>
+</aside>
+
   );
 };
 
