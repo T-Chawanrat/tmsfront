@@ -410,24 +410,10 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import { useEffect, useRef, useState, FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { FilterDropdown } from "../components/dropdown/FilterDropdown";
+import { useScanSounds } from "../hooks/useScanSounds";
 import successSound from "../../assets/sounds/success.mp3";
 import errorSound from "../../assets/sounds/error.mp3";
 import { useAuth } from "../context/AuthContext";
@@ -448,11 +434,14 @@ export default function BillScanWarehouse() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const typingTimer = useRef<number | null>(null);
+  // const typingTimer = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const successSoundRef = useRef<HTMLAudioElement | null>(null);
   const errorSoundRef = useRef<HTMLAudioElement | null>(null);
-
+  const { playSuccess, playError } = useScanSounds(successSound, errorSound, {
+    poolSize: 8, // ยิงรัวมาก ๆ แนะนำ 6-10
+    volume: 1,
+  });
   // filter ใหม่
   const [customerFilter, setCustomerFilter] = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("");
@@ -464,7 +453,10 @@ export default function BillScanWarehouse() {
       setLoading(true);
       setError(null);
 
-      const res = await axios.get("https://xsendwork.com/api/bills-warehouse", {});
+      const res = await axios.get(
+        "https://xsendwork.com/api/bills-warehouse",
+        {}
+      );
       const data: BillRow[] = res.data.data || [];
       setPendingRows(data);
     } catch (err) {
@@ -484,10 +476,10 @@ export default function BillScanWarehouse() {
     inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    handleScanSerial();
-  };
+  // useEffect(() => {
+  //   successSoundRef.current?.load();
+  //   errorSoundRef.current?.load();
+  // }, []);
 
   const handleScanSerial = (value?: string) => {
     const serial = (value || serialInput).trim();
@@ -509,8 +501,8 @@ export default function BillScanWarehouse() {
         setError(`ไม่พบ SERIAL_NO ${serial}`);
       }
 
-      errorSoundRef.current?.play();
-
+      // errorSoundRef.current?.play();
+      playError();
       setSerialInput("");
       return;
     }
@@ -520,7 +512,8 @@ export default function BillScanWarehouse() {
     setScannedRows((prev) => [row, ...prev]);
 
     setInfo(`ยิง SN : ${serial} สำเร็จ`);
-    successSoundRef.current?.play();
+    // successSoundRef.current?.play();
+    playSuccess();
     setSerialInput("");
     inputRef.current?.focus();
   };
@@ -645,28 +638,21 @@ export default function BillScanWarehouse() {
 
       {/* ส่วนช่องยิงบาร์โค้ด + ปุ่มบันทึก */}
       <form
-        onSubmit={handleSubmit}
+        // onSubmit={handleSubmit}
         className="mb-4 bg-white/90 border border-slate-200 rounded-xl shadow-sm px-4 py-3 flex flex-col md:flex-row md:items-center gap-3"
       >
         <div className="flex flex-col gap-1">
-          {/* <span className="text-[11px] text-slate-600 font-medium">
-            ยิงบาร์โค้ด (SERIAL_NO)
-          </span> */}
           <input
             ref={inputRef}
             type="text"
             value={serialInput}
-            onChange={(e) => {
-              const value = e.target.value.trim();
-              setSerialInput(value);
-
-              if (typingTimer.current) {
-                window.clearTimeout(typingTimer.current);
+            onChange={(e) => setSerialInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                handleScanSerial(e.currentTarget.value); // ✅ ใช้ค่าจากช่อง ณ ตอนนั้น
               }
-
-              typingTimer.current = window.setTimeout(() => {
-                handleScanSerial(value.trim());
-              }, 150);
             }}
             className="border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm w-64 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             placeholder="ยิงบาร์โค้ด..."
@@ -763,9 +749,7 @@ export default function BillScanWarehouse() {
         {/* ฝั่งซ้าย: รอเช็ค */}
         <div className="border border-slate-200 rounded-xl bg-white shadow-sm flex flex-col max-h-[70vh]">
           <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 rounded-t-xl flex justify-between items-center">
-            <span className="font-medium  text-slate-700">
-              รายการรอเช็ค
-            </span>
+            <span className="font-medium  text-slate-700">รายการรอเช็ค</span>
             <span className="text-lg text-red-600 font-semibold">
               {filteredPendingRows.length.toLocaleString("th-TH")} /{" "}
               {pendingRows.length.toLocaleString("th-TH")} รายการ
