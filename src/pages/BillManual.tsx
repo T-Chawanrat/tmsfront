@@ -644,21 +644,6 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import ResizableColumns from "../components/ResizableColumns";
@@ -704,7 +689,7 @@ const headers = [
   "SERIAL_NO",
   "REFERENCE",
   "CREATE_DATE",
-  "รหัสผู้ส่ง",
+  "ชื่อลูกค้า",
   "รหัสผู้รับ",
   "ชื่อผู้รับ",
   "เบอร์โทร",
@@ -804,6 +789,38 @@ export default function BillManual() {
     handleChangeField("RECIPIENT_ZIPCODE", row.zip_code);
 
     setAddressOptions([]);
+  };
+
+  const generateSerialNo = () => {
+    const prefix = "KM";
+
+    // 🔹 สุ่มตัวเลข 10 หลัก
+    const rand10 = () =>
+      Math.floor(Math.random() * 1_000_000_0000)
+        .toString()
+        .padStart(10, "0");
+
+    // 🔹 กันซ้ำ: เช็คทั้ง rows ที่มีอยู่ + ค่าใน form ปัจจุบัน
+    const used = new Set<string>(
+      [formRow.SERIAL_NO, ...rows.map((r) => r.SERIAL_NO)]
+        .filter(Boolean)
+        .map((s) => s.trim().toUpperCase())
+    );
+
+    let serial = "";
+    let tries = 0;
+
+    do {
+      serial = `${prefix}${rand10()}`;
+      tries++;
+
+      if (tries > 3000) {
+        setError("ไม่สามารถสร้าง SERIAL_NO ที่ไม่ซ้ำได้ กรุณาลองใหม่");
+        return;
+      }
+    } while (used.has(serial));
+
+    handleChangeField("SERIAL_NO", serial);
   };
 
   const handleAddOrUpdateRow = () => {
@@ -948,9 +965,9 @@ export default function BillManual() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">
             คีย์บิลด้วยตนเอง
           </h2>
-          <p className=" text-slate-500">
+          {/* <p className=" text-slate-500">
             กรอกข้อมูลบิลด้วยมือ และบันทึกเข้าสู่ระบบในรูปแบบเดียวกับไฟล์นำเข้า
-          </p>
+          </p> */}
         </div>
 
         <div className="flex items-end gap-4 text-sm">
@@ -1011,10 +1028,10 @@ export default function BillManual() {
               ชื่อลูกค้า (CUSTOMER_NAME)
             </label>
             <CustomerDropdown
-              onChange={(customer) => {
+              onChange={(customer, inputText) => {
                 handleChangeField(
                   "CUSTOMER_NAME",
-                  customer?.customer_name || ""
+                  (customer?.customer_name ?? inputText ?? "").toString()
                 );
               }}
             />
@@ -1171,7 +1188,7 @@ export default function BillManual() {
               )}
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-[11px] font-medium mb-1 text-slate-700">
               SERIAL_NO
             </label>
@@ -1181,6 +1198,29 @@ export default function BillManual() {
               onChange={(e) => handleChangeField("SERIAL_NO", e.target.value)}
               className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             />
+          </div> */}
+          <div>
+            <label className="block text-[11px] font-medium mb-1 text-slate-700">
+              SERIAL_NO
+            </label>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formRow.SERIAL_NO}
+                onChange={(e) => handleChangeField("SERIAL_NO", e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+              />
+
+              <button
+                type="button"
+                onClick={generateSerialNo}
+                className="shrink-0 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition"
+                title="Generate SERIAL_NO"
+              >
+                Generate
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1352,4 +1392,3 @@ export default function BillManual() {
     </div>
   );
 }
-
