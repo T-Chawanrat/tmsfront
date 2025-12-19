@@ -1555,7 +1555,7 @@ export default function LabelPage() {
                     น.
                   </div>
                   <div className="mt-1">
-                    จัดส่งโดย: บริษัท ทรานเทค แมนเนจเม้นท์ กรุ๊ปส์ จำกัด
+                    จัดส่งโดย: {row.CUSTOMER_NAME || "-"}
                   </div>
                   <div>โทร. 065-005-2555</div>
                   <div>S: {row.RECIPIENT_CODE || "-"}</div>
