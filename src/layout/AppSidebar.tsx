@@ -421,6 +421,7 @@ type NavItem = {
     name: string;
     path: string;
     icon?: React.ReactNode;
+    roles?: number[];
   }[];
 };
 
@@ -429,95 +430,47 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Menu",
     subItems: [
-      // {
-      //   name: "แดชบอร์ด",
-      //   path: "/",
-      //   icon: <LayoutDashboard size={20} />,
-      // },
-      // {
-      //   name: "หมายเหตุ (จาก App)",
-      //   path: "/appremark",
-      //   icon: <Smartphone size={20} />,
-      // },
-      // {
-      //   name: "สินค้าในคลัง (ไม่มีหมายเหตุ)",
-      //   path: "/productwarehouse",
-      //   icon: <Warehouse size={20} />,
-      // },
-      // {
-      //   name: "สินค้าในคลัง (มีหมายเหตุ)",
-      //   path: "/productoverdue",
-      //   icon: <ClockAlert size={20} />,
-      // },
-      // {
-      //   name: "สินค้าบนรถขนย้าย (6W)",
-      //   path: "/ontruck",
-      //   icon: <Truck size={20} />,
-      // },
-      // {
-      //   name: "สินค้าบนรถกระจาย (เกินเวลา)",
-      //   path: "/over4w",
-      //   icon: <TruckElectric size={20} />,
-      // },
-      // {
-      //   name: "สินค้ากำลังนำส่ง",
-      //   path: "/intransit",
-      //   icon: <PackageCheck size={20} />,
-      // },
-      // {
-      //   name: "ตาราง SLA",
-      //   path: "/sla",
-      //   icon: <File size={20} />,
-      // },
-      // {
-      //   name: "ใบจองรถ",
-      //   path: "/bookings",
-      //   icon: <File size={20} />,
-      // },
-      // {
-      //   name: "ไม่มีรูป",
-      //   path: "/noimage",
-      //   icon: <File size={20} />,
-      // },
-      // {
-      //   name: "สถานะสินค้า",
-      //   path: "/tracking",
-      //   icon: <File size={20} />,
-      // },
       {
         name: "import Excel",
         path: "/import",
         icon: <File size={20} />,
+        roles: [1, 2, 5, 7], 
       },
       {
         name: "import VGT",
         path: "/importvgt",
         icon: <File size={20} />,
+        roles: [1, 2, 5, 7],
       },
       {
         name: "import ADV",
         path: "/importadv",
         icon: <File size={20} />,
+        roles: [1, 2, 5, 7], 
       },
       {
         name: "คีย์บิล",
         path: "/input",
         icon: <File size={20} />,
+        roles: [1, 2, 5, 7],
       },
       {
         name: "Label",
         path: "/labels",
         icon: <File size={20} />,
+        roles: [1, 2, 5, 7],
       },
       {
         name: "Warehouse Scan",
         path: "/warehouse-scan",
         icon: <File size={20} />,
+        roles: [1, 3],
       },
       {
         name: "DC Scan",
         path: "/dc-scan",
         icon: <File size={20} />,
+        roles: [1, 4],
       },
       // {
       //   name: "ดูรูป bills",
@@ -528,6 +481,7 @@ const navItems: NavItem[] = [
         name: "report",
         path: "/report",
         icon: <File size={20} />,
+        roles: [1, 5, 7],
       },
     ],
   },
@@ -540,6 +494,8 @@ const AppSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const roleId = Number(user?.role_id);
+  const canSee = (roles?: number[]) => !roles || roles.includes(roleId);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -652,28 +608,30 @@ const AppSidebar: React.FC = () => {
                 openSubmenu?.type === menuType &&
                 openSubmenu?.index === index && (
                   <div className="mt-2 space-y-2 overflow-hidden transition-all duration-300">
-                    {nav.subItems.map((subItem) => (
-                      <Link
-                        key={subItem.name}
-                        to={subItem.path}
-                        className={`flex justify-center items-center w-full h-10 rounded-md transition-colors ${
-                          isActive(subItem.path)
-                            ? "bg-brand-50 text-brand-500"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                        title={subItem.name}
-                      >
-                        <span
-                          className={`${
+                    {nav.subItems
+                      .filter((subItem) => canSee(subItem.roles))
+                      .map((subItem) => (
+                        <Link
+                          key={subItem.name}
+                          to={subItem.path}
+                          className={`flex justify-center items-center w-full h-10 rounded-md transition-colors ${
                             isActive(subItem.path)
-                              ? "text-brand-500"
-                              : "text-gray-600"
+                              ? "bg-brand-50 text-brand-500"
+                              : "text-gray-600 hover:bg-gray-100"
                           }`}
+                          title={subItem.name}
                         >
-                          {subItem.icon}
-                        </span>
-                      </Link>
-                    ))}
+                          <span
+                            className={`${
+                              isActive(subItem.path)
+                                ? "text-brand-500"
+                                : "text-gray-600"
+                            }`}
+                          >
+                            {subItem.icon}
+                          </span>
+                        </Link>
+                      ))}
                   </div>
                 )}
 
@@ -692,20 +650,22 @@ const AppSidebar: React.FC = () => {
                   }}
                 >
                   <ul className="mt-2 space-y-1 ml-9">
-                    {nav.subItems.map((subItem) => (
-                      <li key={subItem.name}>
-                        <Link
-                          to={subItem.path}
-                          className={`menu-dropdown-item ${
-                            isActive(subItem.path)
-                              ? "menu-dropdown-item-active"
-                              : "menu-dropdown-item-inactive"
-                          }`}
-                        >
-                          {subItem.name}
-                        </Link>
-                      </li>
-                    ))}
+                    {nav.subItems
+                      .filter((subItem) => canSee(subItem.roles))
+                      .map((subItem) => (
+                        <li key={subItem.name}>
+                          <Link
+                            to={subItem.path}
+                            className={`menu-dropdown-item ${
+                              isActive(subItem.path)
+                                ? "menu-dropdown-item-active"
+                                : "menu-dropdown-item-inactive"
+                            }`}
+                          >
+                            {subItem.name}
+                          </Link>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               )}
@@ -744,90 +704,8 @@ const AppSidebar: React.FC = () => {
   };
 
   return (
-    // <aside
-    //   className={`font-thai fixed mt-[48px] flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
-    //   ${isExpanded || isMobileOpen ? "w-[290px]" : "w-[90px]"}
-    //     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-    //     lg:translate-x-0`}
-    // >
-    //   <div
-    //     className={`py-8 flex ${
-    //       !isExpanded ? "lg:justify-center" : "justify-start"
-    //     }`}
-    //   >
-    //     {/* <Link to="/"> */}
-    //     {isExpanded || isMobileOpen ? (
-    //       <>
-    //         <img
-    //           className="dark:hidden"
-    //           src="/images/logo/logo.png"
-    //           alt="Logo"
-    //           width={130}
-    //           height={40}
-    //         />
-    //         <img
-    //           className="hidden dark:block"
-    //           src="/images/logo/logo-dark.svg"
-    //           alt="Logo"
-    //           width={130}
-    //           height={40}
-    //         />
-    //       </>
-    //     ) : (
-    //       <img
-    //         src="/images/logo/logo-icon.png"
-    //         alt="Logo"
-    //         width={32}
-    //         height={32}
-    //       />
-    //     )}
-    //     {/* </Link> */}
-    //   </div>
-    //   <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
-    //     <nav className="mb-6">
-    //       <div className="flex flex-col gap-4">
-    //         <div>
-    //           {user && (
-    //             <>
-    //               <h2
-    //                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-    //                   !isExpanded ? "lg:justify-center" : "justify-start"
-    //                 }`}
-    //               >
-    //                 {isExpanded || isMobileOpen ? (
-    //                   "Menu"
-    //                 ) : (
-    //                   <HorizontaLDots className="size-6" />
-    //                 )}
-    //               </h2>
-    //               {renderMenuItems(navItems, "main")}
-    //             </>
-    //           )}
-    //         </div>
-    //       </div>
-    //     </nav>
-
-    //     {user && (
-    //       <div className="mt-auto pb-8 flex flex-col items-center w-full">
-    //         <button
-    //           onClick={handleLogout}
-    //           className="menu-item group menu-item-inactive cursor-pointer w-full text-left hover:bg-brand-50 py-1"
-    //         >
-    //           <span className="w-5 h-5 flex items-center justify-center">
-    //             <LogOut className="text-brand-500" size={20} />
-    //           </span>
-    //           {(isExpanded || isMobileOpen) && (
-    //             <span className="menu-item-text text-brand-500">Logout</span>
-    //           )}
-    //         </button>
-    //       </div>
-    //     )}
-    //   </div>
-    // </aside>
-
-
     <aside
-  className={`
+      className={`
     font-thai fixed top-0 left-0 z-50
     mt-[48px] lg:mt-0
     h-screen
@@ -839,88 +717,87 @@ const AppSidebar: React.FC = () => {
     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
     lg:translate-x-0
   `}
->
-  <div
-    className={`py-8 flex ${
-      !isExpanded ? "lg:justify-center" : "justify-start"
-    }`}
-  >
-    {/* <Link to="/"> */}
-    {isExpanded || isMobileOpen ? (
-      <>
-        <img
-          className="dark:hidden"
-          src="/images/logo/logo.png"
-          alt="Logo"
-          width={130}
-          height={40}
-        />
-        <img
-          className="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width={130}
-          height={40}
-        />
-      </>
-    ) : (
-      <img
-        src="/images/logo/logo-icon.png"
-        alt="Logo"
-        width={32}
-        height={32}
-      />
-    )}
-    {/* </Link> */}
-  </div>
-
-  <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar duration-300 ease-linear">
-    <nav className="mb-6">
-      <div className="flex flex-col gap-4">
-        <div>
-          {user && (
-            <>
-              <h2
-                className={`mb-4 uppercase flex leading-[20px] text-slate-400 ${
-                  !isExpanded ? "lg:justify-center" : "justify-start"
-                }`}
-              >
-                {isExpanded || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <HorizontaLDots className="size-6" />
-                )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </>
-          )}
-        </div>
+    >
+      <div
+        className={`py-8 flex ${
+          !isExpanded ? "lg:justify-center" : "justify-start"
+        }`}
+      >
+        {/* <Link to="/"> */}
+        {isExpanded || isMobileOpen ? (
+          <>
+            <img
+              className="dark:hidden"
+              src="/images/logo/logo.png"
+              alt="Logo"
+              width={130}
+              height={40}
+            />
+            <img
+              className="hidden dark:block"
+              src="/images/logo/logo-dark.svg"
+              alt="Logo"
+              width={130}
+              height={40}
+            />
+          </>
+        ) : (
+          <img
+            src="/images/logo/logo-icon.png"
+            alt="Logo"
+            width={32}
+            height={32}
+          />
+        )}
+        {/* </Link> */}
       </div>
-    </nav>
 
-    {user && (
-      <div className="mt-auto pb-8 flex flex-col items-center w-full">
-        <button
-          onClick={handleLogout}
-          className="
+      <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar duration-300 ease-linear">
+        <nav className="mb-6">
+          <div className="flex flex-col gap-4">
+            <div>
+              {user && (
+                <>
+                  <h2
+                    className={`mb-4 uppercase flex leading-[20px] text-slate-400 ${
+                      !isExpanded ? "lg:justify-center" : "justify-start"
+                    }`}
+                  >
+                    {isExpanded || isMobileOpen ? (
+                      "Menu"
+                    ) : (
+                      <HorizontaLDots className="size-6" />
+                    )}
+                  </h2>
+                  {renderMenuItems(navItems, "main")}
+                </>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        {user && (
+          <div className="mt-auto pb-8 flex flex-col items-center w-full">
+            <button
+              onClick={handleLogout}
+              className="
             menu-item menu-item-inactive group
             cursor-pointer w-full text-left
             py-1
             hover:bg-slate-50
           "
-        >
-          <span className="w-5 h-5 flex items-center justify-center">
-            <LogOut className="text-brand-500" size={20} />
-          </span>
-          {(isExpanded || isMobileOpen) && (
-            <span className="menu-item-text text-brand-500">Logout</span>
-          )}
-        </button>
+            >
+              <span className="w-5 h-5 flex items-center justify-center">
+                <LogOut className="text-brand-500" size={20} />
+              </span>
+              {(isExpanded || isMobileOpen) && (
+                <span className="menu-item-text text-brand-500">Logout</span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
-    )}
-  </div>
-</aside>
-
+    </aside>
   );
 };
 

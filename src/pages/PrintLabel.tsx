@@ -1071,8 +1071,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import ResizableColumns from "../components/ResizableColumns";
-import DatePicker from "react-datepicker";
-import { format } from "date-fns";
+// import DatePicker from "react-datepicker";
+// import { format } from "date-fns";
 import { FilterDropdown } from "../components/dropdown/FilterDropdown";
 
 type BillRow = {
@@ -1169,8 +1169,11 @@ export default function LabelPage() {
           setError(res.data?.message || "ดึงรายการบิลไม่สำเร็จ");
         }
       } catch (err) {
-        console.error(err);
-        setError("เกิดข้อผิดพลาดในการดึงรายการบิล");
+        if (err?.response?.status === 403) {
+          setError("คุณไม่มีสิทธิ์เข้าถึงข้อมูลส่วนนี้");
+        } else {
+          setError("เกิดข้อผิดพลาดในการดึงรายการบิล");
+        }
       } finally {
         setLoadingBills(false);
       }
@@ -1612,7 +1615,7 @@ export default function LabelPage() {
                 }
               />
 
-              <div className="min-w-0 w-full">
+              {/* <div className="min-w-0 w-full">
                 <DatePicker
                   selected={filters.date ? new Date(filters.date) : null}
                   onChange={(date: Date | null) => {
@@ -1624,7 +1627,7 @@ export default function LabelPage() {
                   className="border border-slate-300 rounded-lg px-3 py-2 h-8 w-full min-w-0 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                   wrapperClassName="w-full min-w-0"
                 />
-              </div>
+              </div> */}
 
               <FilterDropdown
                 value={filters.customer_name}

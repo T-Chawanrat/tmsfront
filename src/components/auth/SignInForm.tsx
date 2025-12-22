@@ -41,7 +41,7 @@ export default function SignInForm() {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("isLoggedIn", "true");
 
-        navigate("/import", { replace: true });
+        navigate("/", { replace: true });
       } else {
         setLoginError(data.message || "Username or password incorrect");
       }
