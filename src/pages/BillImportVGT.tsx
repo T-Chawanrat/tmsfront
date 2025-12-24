@@ -428,6 +428,7 @@ export default function BillImportVGT() {
           RECIPIENT_DISTRICT: (r["อำเภอ"] || "").toString().trim(),
           RECIPIENT_PROVINCE: (r["จังหวัด"] || "").toString().trim(),
           TO_DC: (r["DCปลายทาง"] || "").toString().trim(),
+          PRICE: null
         }));
 
         console.log("rawRows[0] =", rawRows[0]);

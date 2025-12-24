@@ -878,38 +878,12 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import ResizableColumns from "../components/ResizableColumns";
 import { downloadImage } from "../utils/DownloadImage";
+// import ExportExcelButton from "../components/ExportExcelButton";
 
 type BillReportRow = {
   id: number;
@@ -1308,6 +1282,13 @@ export default function BillReport() {
             placeholder="อย่างน้อย 3 ตัว เช่น TR6..."
           />
         </div>
+        {/* <div>
+          <ExportExcelButton
+            url="https://xsendwork.com/api/export-billreport"
+            filename="BillReport.xlsx"
+            label="Export Excel"
+          />
+        </div> */}
       </div>
 
       {/* Error */}

@@ -108,7 +108,7 @@ export default function App() {
               <Route
                 path="/report"
                 element={
-                  <ProtectedRoute allowedRoles={[1, 5, 7]}>
+                  <ProtectedRoute allowedRoles={[1, 3, 4, 5, 7]}>
                     <BillReport />
                   </ProtectedRoute>
                 }

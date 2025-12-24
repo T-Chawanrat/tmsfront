@@ -481,7 +481,7 @@ const navItems: NavItem[] = [
         name: "report",
         path: "/report",
         icon: <File size={20} />,
-        roles: [1, 5, 7],
+        roles: [1, 3, 4, 5, 7],
       },
     ],
   },

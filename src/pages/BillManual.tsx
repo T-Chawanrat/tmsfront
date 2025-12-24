@@ -667,6 +667,7 @@ type ImportRow = {
   RECIPIENT_PROVINCE: string;
   RECIPIENT_ZIPCODE: string;
   SERIAL_NO: string;
+  PRICE: string;
 };
 
 type ZipAddressRow = {
@@ -698,6 +699,7 @@ const headers = [
   "อำเภอ",
   "จังหวัด",
   "รหัสไปรษณีย์",
+  "ราคา",
 ];
 
 const emptyRow: ImportRow = {
@@ -714,6 +716,7 @@ const emptyRow: ImportRow = {
   RECIPIENT_PROVINCE: "",
   RECIPIENT_ZIPCODE: "",
   SERIAL_NO: "",
+  PRICE: "",
 };
 
 const requiredFields: (keyof ImportRow)[] = [
@@ -1222,6 +1225,17 @@ export default function BillManual() {
               </button>
             </div>
           </div>
+          <div>
+            <label className="block text-[11px] font-medium mb-1 text-slate-700">
+              ราคา
+            </label>
+            <input
+              type="number"
+              value={formRow.PRICE}
+              onChange={(e) => handleChangeField("PRICE", e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+            />
+          </div>
         </div>
 
         <div className="mt-3 flex gap-2 justify-end">
@@ -1381,6 +1395,9 @@ export default function BillManual() {
                     </td>
                     <td className="px-2 py-1.5 border-b border-slate-200  truncate">
                       {row.RECIPIENT_ZIPCODE || "-"}
+                    </td>
+                    <td className="px-2 py-1.5 border-b border-slate-200 truncate">
+                      {row.PRICE ? Number(row.PRICE).toFixed(2) : "-"}
                     </td>
                   </tr>
                 ))}

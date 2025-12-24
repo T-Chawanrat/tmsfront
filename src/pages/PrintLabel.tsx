@@ -1087,6 +1087,7 @@ type BillRow = {
   RECIPIENT_PROVINCE: string;
   RECIPIENT_ZIPCODE: string;
   RECIPIENT_CODE: string;
+  PRICE: number;
   warehouse_name: string;
 };
 
@@ -1145,6 +1146,16 @@ export default function LabelPage() {
       if (bills.length > 0) {
         setError(null);
       }
+    }
+  };
+
+  const toggleSelectAllReprint = () => {
+    if (reprintSelectedIds.length === reprintRows.length) {
+      // ยกเลิกเลือกทั้งหมด
+      setReprintSelectedIds([]);
+    } else {
+      // เลือกทั้งหมด
+      setReprintSelectedIds(reprintRows.map((r) => r.id));
     }
   };
 
@@ -1557,11 +1568,11 @@ export default function LabelPage() {
                     })}{" "}
                     น.
                   </div>
-                  <div className="mt-1">
-                    จัดส่งโดย: {row.CUSTOMER_NAME || "-"}
+                  <div className="mt-1">ลูกค้า: {row.CUSTOMER_NAME || "-"}</div>
+                  <div>
+                    S: {row.RECIPIENT_CODE || "-"} &nbsp;&nbsp; 
+                    ราคา:{row.PRICE || "-"}
                   </div>
-                  <div>โทร. 065-005-2555</div>
-                  <div>S: {row.RECIPIENT_CODE || "-"}</div>
                 </div>
 
                 {row.qr_url && (
@@ -1694,8 +1705,16 @@ export default function LabelPage() {
                     <thead className="sticky top-0 bg-white z-10">
                       <tr>
                         <th className="p-2 border-b border-slate-200 text-center">
-                          เลือก
+                          <input
+                            type="checkbox"
+                            checked={
+                              reprintRows.length > 0 &&
+                              reprintSelectedIds.length === reprintRows.length
+                            }
+                            onChange={toggleSelectAllReprint}
+                          />
                         </th>
+
                         <th className="p-2 border-b border-slate-200">
                           SERIAL_NO
                         </th>

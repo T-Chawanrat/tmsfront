@@ -432,6 +432,7 @@ export default function BillImportADV() {
         RECIPIENT_PROVINCE: r.province_name || null,
         RECIPIENT_ZIPCODE: r.postcode || null,
         SERIAL_NO: r.box_sn || null,
+        PRICE: null,
       }));
 
       const res = await axios.post("https://xsendwork.com/api/import-adv", {

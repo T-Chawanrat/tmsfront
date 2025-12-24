@@ -29,10 +29,19 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
   return (
     <button
       onClick={handleDownload}
-      className="h-9 flex-shrink-0 inline-flex items-center gap-2 px-2 py-1 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
       disabled={loading}
+      className="
+    inline-flex items-center gap-2
+    px-4 py-2
+    rounded-full
+    bg-blue-600 text-white font-medium
+    shadow-sm transition
+    hover:bg-blue-700
+    disabled:opacity-50 disabled:cursor-not-allowed
+    focus:outline-none focus:ring-2 focus:ring-blue-300
+  "
     >
-      <FileDown />
+      <FileDown className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
       <span className="hidden md:inline">{label || "Export Excel"}</span>
     </button>
   );
