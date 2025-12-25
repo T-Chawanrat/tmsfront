@@ -883,6 +883,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import ResizableColumns from "../components/ResizableColumns";
 import { downloadImage } from "../utils/DownloadImage";
+import WarehouseDropdown from "../components/dropdown/WarehouseDropdown";
 // import ExportExcelButton from "../components/ExportExcelButton";
 
 type BillReportRow = {
@@ -935,7 +936,9 @@ export default function BillReport() {
   const [error, setError] = useState<string | null>(null);
   const [searchSerial, setSearchSerial] = useState("");
   const [searchReference, setSearchReference] = useState("");
-
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(
+    null
+  );
   const [modalSerialNo, setModalSerialNo] = useState<string | null>(null);
   const [modalReference, setModalReference] = useState<string | null>(null);
   const [modalSignUrl, setModalSignUrl] = useState<string | null>(null);
@@ -1010,11 +1013,16 @@ export default function BillReport() {
   // ------------------------------------------
   // ดึงข้อมูล (รองรับค่าค้นหาที่ส่งเข้ามา)
   // ------------------------------------------
-  const fetchData = async (customSerial?: string, customReference?: string) => {
+  const fetchData = async (
+    customSerial?: string,
+    customReference?: string,
+    customWarehouseId?: number
+  ) => {
     if (!user?.user_id) return;
 
     const serial = customSerial ?? searchSerial;
     const reference = customReference ?? searchReference;
+    const warehouseId = customWarehouseId ?? selectedWarehouseId;
 
     setLoading(true);
     setError(null);
@@ -1025,6 +1033,7 @@ export default function BillReport() {
           user_id: user.user_id,
           SERIAL_NO: serial && serial.length >= 3 ? serial : undefined,
           REFERENCE: reference && reference.length >= 3 ? reference : undefined,
+          warehouse_id: warehouseId ?? undefined,
         },
       });
 
@@ -1039,6 +1048,11 @@ export default function BillReport() {
     } finally {
       setLoading(false);
     }
+  };
+
+    const handleWarehouseChange = (warehouseId: number | null) => {
+    setSelectedWarehouseId(warehouseId);
+    fetchData(searchSerial, searchReference, warehouseId);
   };
 
   // เปิด modal
@@ -1201,9 +1215,7 @@ export default function BillReport() {
     }
   };
 
-  // ------------------------------------------
-  // UI
-  // ------------------------------------------
+
   return (
     <div className="font-thai w-full h-[70vh] bg-white px-4 py-5">
       {/* Header / Summary */}
@@ -1212,10 +1224,7 @@ export default function BillReport() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">
             รายงาน
           </h2>
-          {/* <p className=" text-slate-500">
-            ตรวจสอบสถานะบิล, รูปภาพ และลายเซ็นจากระบบขนส่ง
-          </p> */}
-        </div>
+            </div>
 
         <div className="flex items-end gap-4 text-sm">
           <div className="flex flex-col items-end text-slate-600">
@@ -1282,6 +1291,7 @@ export default function BillReport() {
             placeholder="อย่างน้อย 3 ตัว เช่น TR6..."
           />
         </div>
+        <WarehouseDropdown onChange={handleWarehouseChange} />
         {/* <div>
           <ExportExcelButton
             url="https://xsendwork.com/api/export-billreport"

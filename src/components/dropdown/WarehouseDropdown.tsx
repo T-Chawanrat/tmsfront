@@ -27,7 +27,7 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        const response = await axios.get("https://xsendwork.com/api/warehouses");
+        const response = await axios.get("https://xsendwork.com/api/select-warehouse");
         const data = response.data.data || [];
         setWarehouses(data);
         setFilteredWarehouses(data); // ตั้งค่าเริ่มต้นสำหรับ dropdown
@@ -125,7 +125,7 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
         </button>
       </div>
       {isDropdownOpen && (
-        <ul className="absolute z-10 bg-white border border-gray-300 rounded-lg mt-1 max-h-40 overflow-y-auto w-full">
+        <ul className="absolute z-99 bg-white border border-gray-300 rounded-lg mt-1 max-h-40 overflow-y-auto w-full">
           {filteredWarehouses.length > 0 ? (
             filteredWarehouses.map((warehouse) => (
               <li
