@@ -884,6 +884,7 @@ import { useAuth } from "../context/AuthContext";
 import ResizableColumns from "../components/ResizableColumns";
 import { downloadImage } from "../utils/DownloadImage";
 import WarehouseDropdown from "../components/dropdown/WarehouseDropdown";
+import Pagination from "../components/Pagination";
 // import ExportExcelButton from "../components/ExportExcelButton";
 
 type BillReportRow = {
@@ -963,6 +964,11 @@ export default function BillReport() {
   const [savingImages, setSavingImages] = useState(false);
   const [imageEditError, setImageEditError] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+  const [pageSize] = useState(100); // ให้ตรงกับ backend default หรือปรับได้
+  const [total, setTotal] = useState(0);
+
   const headers = [
     "ลำดับ",
     "SERIAL_NO",
@@ -1013,16 +1019,55 @@ export default function BillReport() {
   // ------------------------------------------
   // ดึงข้อมูล (รองรับค่าค้นหาที่ส่งเข้ามา)
   // ------------------------------------------
+  // const fetchData = async (
+  //   customSerial?: string,
+  //   customReference?: string,
+  //   customWarehouseId?: number
+  // ) => {
+  //   if (!user?.user_id) return;
+
+  //   const serial = customSerial ?? searchSerial;
+  //   const reference = customReference ?? searchReference;
+  //   const warehouseId = customWarehouseId ?? selectedWarehouseId;
+
+  //   setLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     const res = await axios.get(API_ENDPOINT, {
+  //       params: {
+  //         user_id: user.user_id,
+  //         SERIAL_NO: serial && serial.length >= 3 ? serial : undefined,
+  //         REFERENCE: reference && reference.length >= 3 ? reference : undefined,
+  //         warehouse_id: warehouseId ?? undefined,
+  //       },
+  //     });
+
+  //     if (res.data?.success) {
+  //       setRows(res.data.data || []);
+  //     } else {
+  //       setError(res.data?.message || "ดึงข้อมูลไม่สำเร็จ");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     setError("เกิดข้อผิดพลาดในการดึงข้อมูล");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchData = async (
     customSerial?: string,
     customReference?: string,
-    customWarehouseId?: number
+    customWarehouseId?: number,
+    customPage?: number
   ) => {
     if (!user?.user_id) return;
 
     const serial = customSerial ?? searchSerial;
     const reference = customReference ?? searchReference;
     const warehouseId = customWarehouseId ?? selectedWarehouseId;
+    const nextPage = customPage ?? page;
 
     setLoading(true);
     setError(null);
@@ -1034,11 +1079,28 @@ export default function BillReport() {
           SERIAL_NO: serial && serial.length >= 3 ? serial : undefined,
           REFERENCE: reference && reference.length >= 3 ? reference : undefined,
           warehouse_id: warehouseId ?? undefined,
+
+          // ✅ pagination params
+          page: nextPage,
+          pageSize, // ✅ ส่งไปให้ backend (ถูก maxPageSize แล้ว)
         },
       });
 
       if (res.data?.success) {
         setRows(res.data.data || []);
+
+        // ✅ อ่าน pagination จาก backend
+        const pg = res.data.pagination;
+        if (pg) {
+          setPage(pg.page ?? nextPage);
+          setPageCount(pg.totalPages ?? 1);
+          setTotal(pg.total ?? 0);
+        } else {
+          // เผื่อ backend ยังไม่ส่ง pagination
+          setPage(nextPage);
+          setPageCount(1);
+          setTotal((res.data.data || []).length);
+        }
       } else {
         setError(res.data?.message || "ดึงข้อมูลไม่สำเร็จ");
       }
@@ -1050,10 +1112,16 @@ export default function BillReport() {
     }
   };
 
-    const handleWarehouseChange = (warehouseId: number | null) => {
+  const handleWarehouseChange = (warehouseId: number | null) => {
     setSelectedWarehouseId(warehouseId);
-    fetchData(searchSerial, searchReference, warehouseId);
+    setPage(1);
+    fetchData(searchSerial, searchReference, warehouseId ?? undefined, 1);
   };
+
+  // const handleWarehouseChange = (warehouseId: number | null) => {
+  //   setSelectedWarehouseId(warehouseId);
+  //   fetchData(searchSerial, searchReference, warehouseId);
+  // };
 
   // เปิด modal
   const openImageModal = (r: any) => {
@@ -1104,9 +1172,16 @@ export default function BillReport() {
     setImageEditError(null);
   };
 
+  // useEffect(() => {
+  //   if (user?.user_id) {
+  //     fetchData("");
+  //   }
+  // }, [user?.user_id]);
+
   useEffect(() => {
     if (user?.user_id) {
-      fetchData("");
+      setPage(1);
+      fetchData("", "", selectedWarehouseId ?? undefined, 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.user_id]);
@@ -1215,16 +1290,15 @@ export default function BillReport() {
     }
   };
 
-
   return (
-    <div className="font-thai w-full h-[70vh] bg-white px-4 py-5">
+    <div className="font-thai w-full h-full bg-white px-4 py-5">
       {/* Header / Summary */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">
             รายงาน
           </h2>
-            </div>
+        </div>
 
         <div className="flex items-end gap-4 text-sm">
           <div className="flex flex-col items-end text-slate-600">
@@ -1240,7 +1314,8 @@ export default function BillReport() {
               จำนวนรายการ
             </span>
             <span className="font-semibold text-slate-800">
-              {rows.length.toLocaleString("th-TH")}
+              {/* {rows.length.toLocaleString("th-TH")} */}
+              {total.toLocaleString("th-TH")}
             </span>
           </div>
         </div>
@@ -1258,13 +1333,34 @@ export default function BillReport() {
             onChange={(e) => {
               const value = e.target.value;
               setSearchSerial(value);
+              setPage(1);
 
               if (value.length === 0) {
-                fetchData("", searchReference);
+                fetchData(
+                  "",
+                  searchReference,
+                  selectedWarehouseId ?? undefined,
+                  1
+                );
               } else if (value.length >= 3) {
-                fetchData(value, searchReference);
+                fetchData(
+                  value,
+                  searchReference,
+                  selectedWarehouseId ?? undefined,
+                  1
+                );
               }
             }}
+            // onChange={(e) => {
+            //   const value = e.target.value;
+            //   setSearchSerial(value);
+
+            //   if (value.length === 0) {
+            //     fetchData("", searchReference);
+            //   } else if (value.length >= 3) {
+            //     fetchData(value, searchReference);
+            //   }
+            // }}
             className="border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm min-w-[220px] shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             placeholder="อย่างน้อย 3 ตัว เช่น BX2..."
           />
@@ -1280,13 +1376,34 @@ export default function BillReport() {
             onChange={(e) => {
               const value = e.target.value;
               setSearchReference(value);
+              setPage(1);
 
               if (value.length === 0) {
-                fetchData(searchSerial, "");
+                fetchData(
+                  searchSerial,
+                  "",
+                  selectedWarehouseId ?? undefined,
+                  1
+                );
               } else if (value.length >= 3) {
-                fetchData(searchSerial, value);
+                fetchData(
+                  searchSerial,
+                  value,
+                  selectedWarehouseId ?? undefined,
+                  1
+                );
               }
             }}
+            // onChange={(e) => {
+            //   const value = e.target.value;
+            //   setSearchReference(value);
+
+            //   if (value.length === 0) {
+            //     fetchData(searchSerial, "");
+            //   } else if (value.length >= 3) {
+            //     fetchData(searchSerial, value);
+            //   }
+            // }}
             className="border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm min-w-[220px] shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             placeholder="อย่างน้อย 3 ตัว เช่น TR6..."
           />
@@ -1787,6 +1904,15 @@ export default function BillReport() {
           </div>
         </div>
       )}
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        disabled={loading}
+        onPageChange={(p) => {
+          setPage(p);
+          fetchData(undefined, undefined, undefined, p);
+        }}
+      />
     </div>
   );
 }
