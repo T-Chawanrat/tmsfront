@@ -16,10 +16,10 @@ const StatusFilter: React.FC<StatusFilterProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // หาตัวเลือกที่เลือกอยู่
+  
   const selected = STATUS_OPTIONS.find(opt => opt.value === value) || STATUS_OPTIONS[0];
 
-  // ปิด dropdown เมื่อคลิกนอก
+  
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {

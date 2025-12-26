@@ -27,7 +27,6 @@ const NoImageTabs: React.FC = () => {
   };
 
   useEffect(() => {
-    // Update underline position and width based on the active tab
     const tabsContainer = tabsContainerRef.current;
     if (tabsContainer) {
       const activeTab = tabsContainer.querySelector<HTMLDivElement>(

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-// import AxiosInstance from "../../utils/AxiosInstance";
+
 import { ChevronDownIcon } from "lucide-react";
 import axios from "axios";
 
@@ -16,13 +16,13 @@ interface WarehouseDropdownProps {
 
 const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>(""); // คำค้นหาใน input
+  const [searchTerm, setSearchTerm] = useState<string>(""); 
   const [filteredWarehouses, setFilteredWarehouses] = useState<Warehouse[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(
     null
-  ); // ID ที่เลือกไว้
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false); // สถานะ dropdown เปิด/ปิด
-  const dropdownRef = useRef<HTMLDivElement>(null); // ใช้ตรวจจับการคลิกภายนอก dropdown
+  ); 
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false); 
+  const dropdownRef = useRef<HTMLDivElement>(null); 
 
   useEffect(() => {
     const fetchWarehouses = async () => {
@@ -30,7 +30,7 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
         const response = await axios.get("https://xsendwork.com/api/select-warehouse");
         const data = response.data.data || [];
         setWarehouses(data);
-        setFilteredWarehouses(data); // ตั้งค่าเริ่มต้นสำหรับ dropdown
+        setFilteredWarehouses(data); 
       } catch (error) {
         console.error("Error fetching warehouses:", error);
       }
@@ -40,7 +40,7 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
   }, []);
 
   useEffect(() => {
-    // กรองข้อมูลตาม searchTerm
+    
     if (searchTerm) {
       const results = warehouses.filter((warehouse) =>
         warehouse.warehouse_name
@@ -49,7 +49,7 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
       );
       setFilteredWarehouses(results);
     } else {
-      setFilteredWarehouses(warehouses); // ถ้าไม่มี searchTerm ให้แสดงรายการทั้งหมด
+      setFilteredWarehouses(warehouses); 
     }
   }, [searchTerm, warehouses]);
 
@@ -59,14 +59,14 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
-        setIsDropdownOpen(false); // ปิด dropdown เมื่อคลิกนอก dropdown
-        // หาก dropdown ถูกปิดโดยไม่ได้เลือกตัวเลือกใหม่ ให้แสดงค่าที่เลือกไว้
+        setIsDropdownOpen(false); 
+        
         if (!searchTerm && selectedWarehouseId) {
           const selectedWarehouse = warehouses.find(
             (warehouse) => warehouse.warehouse_id === selectedWarehouseId
           );
           if (selectedWarehouse) {
-            setSearchTerm(selectedWarehouse.warehouse_name); // แสดงชื่อ warehouse ที่เลือกไว้ใน input
+            setSearchTerm(selectedWarehouse.warehouse_name); 
           }
         }
       }
@@ -79,29 +79,29 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
   }, [searchTerm, selectedWarehouseId, warehouses]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value; // ค่าที่พิมพ์ใน input
-    setSearchTerm(value); // อัปเดตคำค้นหา
-    setIsDropdownOpen(true); // เปิด dropdown เมื่อมีการพิมพ์
+    const value = e.target.value; 
+    setSearchTerm(value); 
+    setIsDropdownOpen(true); 
 
-    // หากข้อความถูกลบจนเป็นค่าว่าง ให้รีเซ็ต selectedWarehouseId และส่ง callback
+    
     if (value === "") {
-      setSelectedWarehouseId(null); // ไม่เลือกตัวเลือกใดๆ
-      onChange(null); // ส่งค่า null กลับไปยัง parent
+      setSelectedWarehouseId(null); 
+      onChange(null); 
     }
   };
 
   const handleSelectChange = (warehouseId: number, warehouseName: string) => {
-    setSelectedWarehouseId(warehouseId); // บันทึก warehouse_id ที่เลือก
-    setSearchTerm(warehouseName); // แสดงชื่อ warehouse ใน input
-    setIsDropdownOpen(false); // ปิด dropdown
-    onChange(warehouseId); // ส่งค่า warehouse_id กลับไปยัง parent component
+    setSelectedWarehouseId(warehouseId); 
+    setSearchTerm(warehouseName); 
+    setIsDropdownOpen(false); 
+    onChange(warehouseId); 
   };
 
   const toggleDropdown = () => {
-    // toggle dropdown และรีเซ็ต searchTerm (เพื่อเปิด dropdown ให้แสดงรายการทั้งหมด)
+    
     setIsDropdownOpen((prev) => !prev);
     if (!isDropdownOpen) {
-      setSearchTerm(""); // รีเซ็ต searchTerm เมื่อกดลูกศร
+      setSearchTerm(""); 
     }
   };
 
@@ -113,12 +113,12 @@ const WarehouseDropdown: React.FC<WarehouseDropdownProps> = ({ onChange }) => {
           placeholder="ค้นหาคลังสินค้า"
           value={searchTerm}
           onChange={handleInputChange}
-          onFocus={() => setIsDropdownOpen(true)} // เปิด dropdown เมื่อ focus
+          onFocus={() => setIsDropdownOpen(true)} 
           className="flex-grow focus:outline-none"
         />
         <button
           type="button"
-          onClick={toggleDropdown} // เปิด dropdown เมื่อคลิกลูกศร
+          onClick={toggleDropdown} 
           className=" focus:outline-none"
         >
           <ChevronDownIcon className="h-5 text-gray-500 -ml-5" />

@@ -1,4 +1,3 @@
-// src/utils/soundPool.ts
 export type SoundPool = {
   play: () => void;
   load: () => void;
@@ -21,12 +20,12 @@ export function createSoundPool(src: string, size = 6, volume = 1): SoundPool {
     const a = pool[idx % pool.length];
     idx++;
 
-    // รีเซ็ตให้เล่นใหม่ทุกครั้ง
+    
     a.pause();
     a.currentTime = 0;
 
     a.play().catch(() => {
-      // เงียบไว้ (กัน policy / decode error)
+      
     });
   };
 

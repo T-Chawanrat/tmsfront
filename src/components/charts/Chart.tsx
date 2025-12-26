@@ -84,7 +84,7 @@ export default function ProductWarehouseChart() {
   };
   const [series, setSeries] = useState<{ name: string; data: number[] }[]>([
     {
-      name: "Count", // ชื่อของข้อมูลในกราฟ
+      name: "Count", 
       data: [], 
     },
   ]);
@@ -92,33 +92,33 @@ export default function ProductWarehouseChart() {
 
   const fetchData = async () => {
     try {
-      const { data }: { data: ApiResponse } = await AxiosInstance.get("/02"); // เรียก API
-      const countWarehouse15 = data.data[0]?.count_warehouse_15 || 0; // ดึงค่าจำนวนสินค้าคลัง 15
-      const countWarehouseNot15 = data.data[0]?.count_warehouse_not_15 || 0; // ดึงค่าจำนวนสินค้านอกคลัง 15
+      const { data }: { data: ApiResponse } = await AxiosInstance.get("/02"); 
+      const countWarehouse15 = data.data[0]?.count_warehouse_15 || 0; 
+      const countWarehouseNot15 = data.data[0]?.count_warehouse_not_15 || 0; 
 
-      // อัปเดต series ของกราฟ
+      
       setSeries([
         {
           name: "Count",
-          data: [countWarehouse15, countWarehouseNot15], // ข้อมูล 2 ค่า
+          data: [countWarehouse15, countWarehouseNot15], 
         },
       ]);
     } catch (error) {
-      console.error("Error fetching data from API:", error); // แสดงข้อผิดพลาด
+      console.error("Error fetching data from API:", error); 
     }
   };
 
   useEffect(() => {
-    fetchData(); // เรียก fetchData เมื่อคอมโพเนนต์ mount (โหลดครั้งแรก)
+    fetchData(); 
   }, []);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
   }
 
-  // function closeDropdown() {
-  //   setIsOpen(false);
-  // }
+  
+  
+  
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between">

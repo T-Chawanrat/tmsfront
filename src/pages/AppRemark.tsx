@@ -7,10 +7,7 @@ import { useNavigate } from "react-router-dom";
 import Pagination from "../components/Pagination";
 import AxiosInstance from "../utils/AxiosInstance";
 import Button from "../components/ui/button/Button";
-import {
-  Loader2,
-  // Logs
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import ResizableColumns from "../components/ResizableColumns";
 import SearchInput from "../components/SearchInput";
 import ExportExcelButton from "../components/ExportExcelButton";
@@ -43,7 +40,6 @@ export interface LeditRow {
 }
 
 const headers = [
-  // "Log",
   "วันที่จากแอป",
   "หมายเหตุแอป",
   "หมายเหตุ",

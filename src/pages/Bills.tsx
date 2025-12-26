@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { format } from "date-fns";
-// import { useAuth } from "../context/AuthContext";
-// import { useNavigate } from "react-router-dom";
+
 import { downloadImage } from "../utils/DownloadImage";
 
 interface Bill {
@@ -25,13 +24,6 @@ export default function BillPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  // const { isLoggedIn } = useAuth();
-  // const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   if (!isLoggedIn) navigate("/signin", { replace: true });
-  // }, [isLoggedIn, navigate]);
 
   const fetchBills = async () => {
     setLoading(true);

@@ -9,8 +9,8 @@ export interface WarehouseOver4W {
 }
 
 interface WarehouseOver4WProps {
-  selectedWarehouseId: number | null; // รับ selectedWarehouseId จาก parent
-  setSelectedWarehouseId: (id: number | null) => void; // รับ setSelectedWarehouseId จาก parent
+  selectedWarehouseId: number | null; 
+  setSelectedWarehouseId: (id: number | null) => void; 
 }
 
 const WarehouseOver4W: React.FC<WarehouseOver4WProps> = ({
@@ -18,10 +18,10 @@ const WarehouseOver4W: React.FC<WarehouseOver4WProps> = ({
   setSelectedWarehouseId,
 }) => {
   const [warehouses, setWarehouses] = useState<WarehouseOver4W[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>(""); // คำค้นหาใน input
+  const [searchTerm, setSearchTerm] = useState<string>(""); 
   const [filteredWarehouses, setFilteredWarehouses] = useState<WarehouseOver4W[]>([]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false); // สถานะ dropdown เปิด/ปิด
-  const dropdownRef = useRef<HTMLDivElement>(null); // ใช้ตรวจจับการคลิกภายนอก dropdown
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false); 
+  const dropdownRef = useRef<HTMLDivElement>(null); 
 
   useEffect(() => {
     const fetchWarehouses = async () => {

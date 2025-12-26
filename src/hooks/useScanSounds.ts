@@ -1,4 +1,3 @@
-// src/hooks/useScanSounds.ts
 import { useEffect, useMemo } from "react";
 import { createSoundPool } from "../utils/soundPool";
 

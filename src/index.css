@@ -5,7 +5,6 @@ layer(base);
 
 
 @import "tailwindcss";
-
 @custom-variant dark (&:is(.dark *));
 
 
@@ -15,7 +14,7 @@ layer(base);
 
 @media print {
   @page {
-    size: 100mm 75mm;   /* 10 x 7.5 cm */
+    size: 100mm 75mm;  
     margin: 0;
   }
 
@@ -25,21 +24,18 @@ layer(base);
     padding: 0 !important;
   }
 
-  /* ซ่อนกรอบ UI ของเว็บ */
-  header,
+    header,
   nav,
   aside {
     display: none !important;
   }
 
-  /* ให้โซน labels อยู่ตัวเดียวในหน้า */
-  #label-print-area {
+   #label-print-area {
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  /* กล่อง label แต่ละใบ */
-  .label-item {
+    .label-item {
     padding: 2mm !important; 
     box-sizing: border-box !important;
     page-break-inside: avoid !important;
@@ -97,21 +93,7 @@ layer(base);
   --color-brand-900: #262e89;
   --color-brand-950: #161950;
 
-  /* --color-brand-25:  #f7f7f7; เทาอ่อนเกือบขาว
-  --color-brand-50:  #f0f0f0;
-  --color-brand-100: #e0e0e0;
-  --color-brand-200: #c8c8c8;
-  --color-brand-300: #a8a8a8;
-  --color-brand-400: #8c8c8c;
-  --color-brand-500: #707070;
-  --color-brand-600: #555555;
-  --color-brand-700: #3b3b3b;
-  --color-brand-800: #2a2a2a;
-  --color-brand-900: #1a1a1a;
-  --color-brand-950: #0f0f0f; ดำสนิท */
-
-
-  --color-blue-light-25: #f5fbff;
+   --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
   --color-blue-light-100: #e0f2fe;
   --color-blue-light-200: #b9e6fe;
@@ -222,14 +204,6 @@ layer(base);
   --z-index-999999: 999999;
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
   *,
   ::after,

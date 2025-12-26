@@ -1,5 +1,9 @@
-// App.tsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import SignIn from "./pages/AuthPages/SignIn";
 import NotFound from "./pages/OtherPage/NotFound";
 import AppLayout from "./layout/AppLayout";
@@ -17,12 +21,10 @@ import PrintLabel from "./pages/PrintLabel";
 import BillReport from "./pages/BillReport";
 import ProtectedRoute from "./context/ProtectedRoute";
 
-// ✅ หน้าเริ่มต้น: redirect ตาม role
 const RoleRedirect = () => {
   const { user } = useAuth();
   const roleId = Number(user?.role_id);
 
-  // ปรับได้ตามต้องการ
   if ([1, 2, 5, 7].includes(roleId)) return <Navigate to="/import" replace />;
   if (roleId === 3) return <Navigate to="/warehouse-scan" replace />;
   if (roleId === 4) return <Navigate to="/dc-scan" replace />;

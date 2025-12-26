@@ -23,10 +23,10 @@ export default function ProductWarehouseChart() {
   ]);
   const [isOpen, setIsOpen] = useState(false);
 
-  // เช็คขนาดหน้าจอ
+  
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
-    handleResize(); // เรียกครั้งแรก
+    handleResize(); 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -42,7 +42,7 @@ export default function ProductWarehouseChart() {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: windowWidth < 768 ? "25%" : "18%", // responsive column width
+        columnWidth: windowWidth < 768 ? "25%" : "18%", 
         borderRadius: 5,
         borderRadiusApplication: "end",
       },
